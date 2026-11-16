@@ -37,5 +37,13 @@
     "README.md",
     "LICENSE",
     "CHANGELOG.md"
-  ]
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/npora/create-admin.git"
+  },
+  "homepage": "https://github.com/npora/create-admin#readme",
+  "bugs": {
+    "url": "https://github.com/npora/create-admin/issues"
+  }
 }

@@ -142,4 +142,4 @@ npm publish --access public --registry=https://registry.npmjs.org/
 
 当前生成器支持 npm 版模板快照，并保留旧版 pnpm 快照兼容能力。模板依赖变更后，在模板仓库执行 `npm run update:presets` 并检查生成结果。
 
-[生成器源码](https://github.com/ni9542/create-nova-admin) · [模板源码](https://github.com/npora/admin-template) · [变更记录](CHANGELOG.md) · [MIT 许可证](LICENSE)。第三方依赖遵循各自许可证。
+[生成器源码](https://github.com/npora/create-admin) · [模板源码](https://github.com/npora/admin-template) · [变更记录](CHANGELOG.md) · [MIT 许可证](LICENSE)。第三方依赖遵循各自许可证。
