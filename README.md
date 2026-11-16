@@ -1,217 +1,118 @@
 # Create Nova Admin
 
-使用命令行创建 Vue 3 + TypeScript + Element Plus + Pinia 后台管理项目，请求使用 `@npora/request`，多语言使用 Vue I18n，并同步 Element Plus、Day.js 与页面日期格式。
+创建简洁、可扩展业务的 Vue 3 + TypeScript + Element Plus + Pinia 后台框架。
 
-npm 包名：`@niping9542/create-nova-admin`；[生成器源码](https://github.com/ni9542/create-nova-admin)。生成器从 [Npora Admin Template](https://github.com/npora/admin-template) 获取模板，默认使用 `main` 分支，按所选预设生成项目文件。
+生成器从 [admin-template](https://github.com/npora/admin-template) 获取模板，默认使用 `main` 分支。基础功能包含登录、首页、布局、动态菜单、用户/部门/角色/菜单/字典管理、按钮权限、个人中心、多语言和主题。
 
 ## 在线演示
 
-[打开 Npora Admin 展示网站](https://admin.npora.live)
+[打开展示网站](https://admin.npora.live) · [演示 API 健康检查](https://api.npora.live/health)
 
-| 账号    | 密码     |
-| ------- | -------- |
-| `admin` | `123456` |
-
-以上账号仅用于在线演示和默认测试 API。纯净版、自己部署的后端和正式 SQL 不会自动获得这个账号。
-
-## 环境要求
-
-- 创建项目和开发前端：Node.js 22.12.0 或更高版本。
-- 检查 Worker 后端：Node.js 22.13.0 或更高版本。
-- 生成项目不指定 `packageManager`，可使用 npm、pnpm 或 Yarn。以下以 npm 为例；模板默认使用 npm 和 package-lock.json，其他工具可生成自己的锁文件，无需先删除文件。生成器自身使用 npm 锁文件维护依赖，与生成项目使用哪种包管理器无关。
-- 在线创建需要能够访问 npm 和 GitHub；完整演示的默认测试 API 也需要网络。
+账号：`admin`，密码：`123456`。这是展示站账号，不是正式 SQL 自动创建的账号。
 
 ## 创建项目
 
-### 交互选择
-
 ```sh
-npx @niping9542/create-nova-admin@latest
-```
-
-按提示输入项目名，选择模板。直接回车使用默认纯净版：
-
-```text
-选择模板：
-  1. 纯净后台（默认）
-  2. 后台 + Worker 后端
-  3. 完整演示
-```
-
-### 三个模板的区别
-
-| 内容                             | `starter` 纯净版 | `worker` 后端版 | `demo` 完整演示 |
-| -------------------------------- | ---------------- | --------------- | --------------- |
-| 登录页、后台布局、导航与标签页   | 保留             | 保留            | 保留            |
-| 首页                             | 核心首页         | 核心首页        | 美化演示首页    |
-| 用户、部门、角色、菜单及权限管理 | 保留             | 保留            | 保留            |
-| 个人中心、公共组件、主题和多语言 | 保留             | 保留            | 保留            |
-| 请求封装与前端 API 定义          | 保留             | 保留            | 保留            |
-| 正式 MySQL 权限 SQL              | 保留             | 保留            | 保留            |
-| Worker 后端源码与 SQLite 迁移    | 不生成           | 生成            | 生成            |
-| 表格、表单、下载、缓存等示例页面 | 不生成           | 不生成          | 生成            |
-| 展示站部署辅助                   | 不生成           | 不生成          | 生成            |
-
-**纯净版包含登录页和首页，也保留完整的核心后台功能。** 它不附带 Worker 后端、示例页面和展示站部署工具，相关依赖、插件和命令也不生成。
-
-所有预设使用真实 HTTP 请求，不附带本地 Mock。纯净版的登录流程、动态菜单和系统管理数据需要对接使用者自己的后端；Worker 版提供可独立部署的后端源码，但需要先初始化并运行后端。完整演示默认连接现有测试 API。
-
-### 创建纯净版
-
-```sh
-npx @niping9542/create-nova-admin@latest my-admin --preset starter
+npx @niping9542/create-nova-admin@latest my-admin
 cd my-admin
 npm install
 npm run dev
 ```
 
-开发地址默认 `http://localhost:3000`，端口被占用时以终端打印的地址为准。登录页面可以正常打开；完成真实登录并进入首页，需要可用的后端认证接口。
-
-### 创建 Worker 版
+按提示选择模板，直接回车默认创建纯净后台。也可明确指定：
 
 ```sh
-npx @niping9542/create-nova-admin@latest my-worker --preset worker
-cd my-worker
-npm install
-npm run dev
+npx @niping9542/create-nova-admin@latest my-admin --preset starter
 ```
 
-该预设在纯净版基础上增加 `workers/api/`，后端菜单仅引用核心页面。按生成项目中的 `workers/api/README.md` 完成数据库迁移、密钥与账号初始化，并配置可访问的后端地址。
+| 模板              | 内容                                             |
+| ----------------- | ------------------------------------------------ |
+| `starter`（默认） | 全部基础前端功能和正式 MySQL SQL，对接自己的后端 |
+| `worker`          | 相同核心前端，附加独立 Worker 后端参考实现       |
+| `demo`            | 演示首页、示例页面、测试后端和展示站实现         |
 
-`npm run dev` 只启动前端，不会自动启动或部署 Worker。根目录的 `npm run check:backend` 用于检查后端构建与测试。
+纯净版保留登录和首页，不生成 Worker、演示页面及展示站部署工具，创建后无需删除文件。三种模板都保留基础系统管理和可配置的 `DataTable`：表格与分页是同一个组件，分页条数、布局、对齐等通过参数配置。
 
-### 创建完整演示
-
-```sh
-npx @niping9542/create-nova-admin@latest my-demo --preset demo
-cd my-demo
-npm install
-npm run dev:demo
-```
-
-兼容快捷选项：
-
-```sh
-npx @niping9542/create-nova-admin@latest my-demo --demo
-```
-
-完整演示默认使用测试 API，可使用前面的演示账号。`--demo` 等同于 `--preset demo`，不能同时指定其他预设。
+Worker 版先按生成项目的 `workers/api/README.md` 初始化并运行后端，`npm run dev` 只启动前端。完整演示使用 `npm run dev:demo`，默认连接 `https://api.npora.live`，需要网络；`--demo` 是 `--preset demo` 的快捷方式。
 
 ## 接入自己的后端
 
-在创建时指定接口地址：
+创建时指定地址：
 
 ```sh
-npx @niping9542/create-nova-admin@latest my-admin --preset starter --api-url https://api.example.com
+npx @niping9542/create-nova-admin@latest my-admin --api-url https://api.example.com
 ```
 
-也可以创建后修改生成项目中的 `.env.development.local`：
+也可修改生成项目的 `.env.development.local`：
 
 ```dotenv
-VITE_API_URL=https://api.example.com
+VITE_API_URL=http://localhost:8080
 ```
 
-修改后重启开发服务。默认 API 前缀为 `/api`，开发代理会移除该前缀后转发给后端。此地址只配置开发代理；生产环境需要由站点服务器将 `/api` 转发到实际后端。
+修改后重启开发服务。默认 `/api` 前缀在开发代理中移除后转发；生产需要站点服务器转发。项目使用真实 HTTP，不附带本地 Mock。登录、动态菜单和系统管理需要可用的后端。
 
-前端 API 定义位于生成项目的 `src/api/`，接口契约见其中的 `docs/api.md`；后端响应格式有差异时，集中调整 `src/api/protocol/`。
+请求函数位于 `src/api/modules/`，DTO 位于 `src/api/types/`，响应协议集中在 `src/api/protocol/index.ts`。具体接口见生成项目的 `docs/api.md`。完整演示使用自定义 `--api-url` 时，按生成器提示的 `npm run dev` 启动，让本机地址配置生效。
 
-完整演示指定自定义 API 后，生成器会写入接口地址并启用演示页面，此时使用打印的 `npm run dev` 命令启动：
+## 生成后的目录
 
-```sh
-npx @niping9542/create-nova-admin@latest my-demo --preset demo --api-url https://api.example.com
-```
+| 目录                          | 职责                                          | 包含的模板       |
+| ----------------------------- | --------------------------------------------- | ---------------- |
+| `src/`                        | 基础页面、布局、系统管理、API、状态和公共组件 | 全部             |
+| `database/mysql/`             | 正式权限、字典和索引 SQL                      | 全部             |
+| `public/`、`build/`           | 静态资源、构建和启动加载层                    | 全部             |
+| `scripts/`、`tests/`、`docs/` | 所选模板的运行、验证和开发说明                | 全部             |
+| `workers/api/`                | 独立后端参考实现及 SQLite 迁移                | `worker`、`demo` |
+| `examples/`                   | 演示页面、数据与专属逻辑                      | `demo`           |
+| `deploy/`                     | 展示站实现                                    | `demo`           |
 
-## 生成项目的目录
+`scaffold/` 和生成器维护工具不进入生成项目。`node_modules/`、`dist/`、本机配置、密钥和 Git 历史不随模板复制。
 
-以下是创建后的后台项目目录，不是本生成器仓库的目录。
+### 正式 SQL
 
-| 目录              | 用途                                                       | 包含的预设       |
-| ----------------- | ---------------------------------------------------------- | ---------------- |
-| `src/`            | 登录、首页、布局、权限、系统管理、状态管理、请求与公共组件 | 全部             |
-| `public/`         | 网站图标等原样输出的静态资源                               | 全部             |
-| `build/`          | 公共构建配置和启动加载层                                   | 全部             |
-| `database/mysql/` | 正式权限表结构与基础授权 SQL                               | 全部             |
-| `scripts/`        | 所选预设需要的开发与检查工具                               | 全部             |
-| `tests/`          | 前端核心回归与测试辅助                                     | 全部             |
-| `docs/`           | 与所选预设匹配的目录、开发、接口和权限说明                 | 全部             |
-| `workers/api/`    | 独立后端源码、SQLite 迁移、初始化脚本及测试                | `worker`、`demo` |
-| `examples/`       | 演示首页、示例页面、统计 API 与示例测试                    | `demo`           |
-| `deploy/`         | 展示站部署辅助                                             | `demo`           |
+在空 MySQL 数据库中，按生成项目的 `database/mysql/README.md` 依次导入：
 
-生成器按预设准备文件，使用者无需先删除 Worker 或演示目录。`node_modules/` 和 `dist/` 等安装、构建产物在本机生成，不随模板复制。
+1. `01-schema.sql`：用户、部门、角色、菜单及关联表，包含索引和约束。
+2. `02-seed.sql`：基础部门、角色、菜单、按钮权限及授权关系。
+3. `03-dictionaries.sql`：字典类型、数据、选项及权限。
+4. `04-query-indexes.sql`：列表、筛选和树形查询索引。
 
-### 正式权限 SQL
+管理员和密码哈希由实际后端初始化；已有数据库按增量迁移说明升级。Worker 的 SQLite 迁移与 MySQL SQL 分开使用。
 
-所有预设都保留以下文件，在空 MySQL 数据库中按顺序导入：
+### 开发命令
 
-1. `database/mysql/01-schema.sql`：用户、部门、角色、菜单及关联表，包含索引与约束。
-2. `database/mysql/02-seed.sql`：基础部门、角色、系统管理菜单、按钮权限和授权关系。
+| 命令                                      | 用途                           |
+| ----------------------------------------- | ------------------------------ |
+| `npm run dev`                             | 启动前端，按本机配置访问后端   |
+| `npm run build`                           | 类型检查并构建核心前端         |
+| `npm run check`                           | 核心格式、类型与测试           |
+| `npm run preview`                         | 预览静态产物，API 转发仍需提供 |
+| `npm run check:backend`                   | 检查可选后端，限 Worker/演示版 |
+| `npm run dev:demo` / `npm run build:demo` | 开发/构建完整演示，限演示版    |
 
-使用方法见生成项目的 `database/mysql/README.md`。正式 SQL 不包含演示账号，不替使用者选择密码哈希算法；管理员账号由实际后端初始化。Worker 使用独立的 SQLite 迁移，不能把 MySQL 脚本当作 Worker 迁移执行。
+生成项目包含 `docs/new-business-page.md`，说明新增业务、表格分页配置、表单、菜单和权限的接入方式。命令以实际生成的 `package.json` 为准。
 
-### 常用命令
+## 选项
 
-在生成的后台项目根目录执行：
+| 选项                           | 说明                                                    |
+| ------------------------------ | ------------------------------------------------------- |
+| `[project-name]`               | 单级项目名，使用小写字母、数字、连字符、下划线或点      |
+| `-y, --yes`                    | 跳过交互；未指定名称时使用 `nova-admin-app`，默认纯净版 |
+| `--preset <preset>`            | `starter`、`worker`、`demo`                             |
+| `--demo`                       | `--preset demo` 的快捷方式                              |
+| `--api-url <url>`              | HTTP/HTTPS 后端地址，不接受凭据、查询参数或片段         |
+| `--ref <ref>`                  | 模板分支或标签，默认 `main`                             |
+| `--template-dir <directory>`   | 使用本地完整模板目录                                    |
+| `-V, --version` / `-h, --help` | 查看版本/帮助                                           |
 
-| 命令                     | 用途                                   | 包含的预设       |
-| ------------------------ | -------------------------------------- | ---------------- |
-| `npm run dev`            | 启动前端，按所选预设与本机配置加载页面 | 全部             |
-| `npm run build`          | 类型检查并构建到 `dist/`               | 全部             |
-| `npm run preview`        | 预览构建产物，API 转发仍需自行提供     | 全部             |
-| `npm run check`          | 格式、类型与核心回归检查               | 全部             |
-| `npm run check:backend`  | 后端构建与回归检查                     | `worker`、`demo` |
-| `npm run dev:demo`       | 启动完整演示，默认连接测试 API         | `demo`           |
-| `npm run build:demo`     | 类型检查并构建完整演示                 | `demo`           |
-| `npm run check:examples` | 示例页面与路由检查                     | `demo`           |
-| `npm run check:all`      | 完整演示仓库回归检查                   | `demo`           |
+已有目标目录不会覆盖。生成器不自动安装依赖、启动后端、执行 SQL 或部署网站。
 
-## 命令行选项
+## 环境与维护
 
-```sh
-npx @niping9542/create-nova-admin@latest --help
-```
+Node.js 要求见 `package.json`；后端检查需要 Node.js 22.13+。以 npm 和 `package-lock.json` 维护，生成项目不设置 `packageManager`，使用者可选择 npm、pnpm 或 Yarn。在线创建需要访问 npm 和 GitHub。
 
-| 选项                         | 说明                                                                       |
-| ---------------------------- | -------------------------------------------------------------------------- |
-| `[project-name]`             | 当前目录下的单级项目名，使用小写字母、数字、连字符、下划线或点，不接受路径 |
-| `-y, --yes`                  | 无交互创建；未指定名称时使用 `nova-admin-app`，未指定预设时使用 `starter`  |
-| `--preset <preset>`          | 指定 `starter`、`worker` 或 `demo`                                         |
-| `--demo`                     | `--preset demo` 的快捷方式                                                 |
-| `--api-url <url>`            | 自定义 HTTP/HTTPS 后端地址，不接受账号密码、查询参数或片段                 |
-| `--ref <ref>`                | 模板分支或标签，默认 `main`；目标版本须支持当前预设结构                    |
-| `--template-dir <directory>` | 使用本地模板目录，跳过远程模板下载                                         |
-| `-V, --version`              | 显示生成器版本                                                             |
-| `-h, --help`                 | 显示帮助                                                                   |
+生成器只负责获取和组合文件；基础功能、组件、接口及依赖版本在 `admin-template` 维护。只修改模板时，无需重新发布生成器，之后创建的项目会获取所选分支的新内容；已经创建的项目不会自动更新。
 
-例如，无交互创建默认纯净版：
-
-```sh
-npx @niping9542/create-nova-admin@latest my-admin --yes
-```
-
-`--yes` 可以与 `--preset worker` 或 `--preset demo` 一起使用。非交互终端不会询问模板，未指定预设时使用纯净版；项目名仍须明确提供，或使用 `--yes` 采用默认名称。
-
-已存在的目标目录会导致创建失败，不会被覆盖。生成器不自动安装项目依赖、启动后端、执行 SQL 或部署网站，也不会复制模板中的 Git 历史、本机配置、密钥目录及符号链接。
-
-## 维护生成器
-
-以下操作在本仓库 `create-nova-admin` 中执行。
-
-### 本仓库结构
-
-| 路径                    | 用途                                               |
-| ----------------------- | -------------------------------------------------- |
-| `bin/index.js`          | CLI 入口，处理项目名称、模板选择、参数和提示       |
-| `src/create-project.js` | 模板获取、输入校验、本机配置写入及创建失败后的清理 |
-| `src/presets.js`        | 三种预设的文件组合、依赖快照校验及文档选择         |
-| `tests/`                | 参数、预设、目录保护和创建流程的回归测试           |
-| `package.json`          | npm 包信息、命令入口、依赖与发布文件清单           |
-| `package-lock.json`     | 生成器自身依赖的 npm 锁文件                        |
-| `README.md`             | GitHub 与 npm 展示的使用说明                       |
-
-npm 包只包含 CLI 入口、生成逻辑、包信息和本说明，不把后台模板源码打进 npm 包。模板在创建项目时获取。
-
-### 本机检查
+在本仓库验证生成器：
 
 ```sh
 npm ci
@@ -219,68 +120,26 @@ npm run check
 npm pack --dry-run
 ```
 
-如果后台模板和生成器放在同一父目录，可通过本地模板验证：
+与相邻模板一起验证三种真实生成结果：
 
 ```sh
-node bin/index.js local-admin --yes --preset starter --template-dir ../admin-template
+node ../admin-template/scripts/check-presets.mjs .
 ```
 
-本地模板也必须是包含当前预设差异文件的完整模板仓库。
+CI 在 Node.js 22、24 上检查生成器和打包内容，并使用 npm/pnpm 验证三种模板的独立安装、类型、测试和构建。CI 不发布 npm 或部署网站。生成项目只保留自身的应用 CI。
 
-### 自动检查
-
-每次推送或提交 PR，GitHub Actions 会在 Node.js 22、24 上运行生成器检查和 npm 打包预览，并联合 `admin-template` 的 `main` 分支创建三个真实项目。三个预设分别使用 npm、pnpm 独立安装依赖并执行实际脚本，验证页面、文档链接、类型、回归和生产构建；npm ci 验证模板锁文件，Worker 版同时检查后端。CI 中的 pnpm 版本只用于维护验收，不写入生成项目，也不限制使用者选择工具。
-
-后台模板仓库也会用自身改动验证生成器的 `main` 分支，因此修改任意一边都能检查两者是否兼容。首次启用时，先推送生成器的配套改动，再推送 `admin-template`，让模板端使用到已经支持新检查流程的生成器。
-
-这些工作流只有检查权限，不发布 npm，也不部署网站。生成项目保留应用检查流程，跨仓库维护流程不会复制进去。
-
-### 更新模板与发布
-
-模板维护和 CI 以 npm 为准。当前 npm 锁文件快照为版本 2；生成器保留读取旧版 pnpm 快照的兼容能力，但新版模板需使用支持 npm 快照的生成器。
-
-本次配套版本允许模板不再提供 `packageManager` 字段。更新时需要同步推送两个仓库，并手动发布包含兼容修改的生成器新版本；旧生成器仍会校验 pnpm 字段，不能只更新模板仓库。
-
-- 只修改后台页面或公共组件时，提交并推送 `admin-template` 的模板分支；之后新创建的项目会获取对应分支内容，已经生成的项目不会自动更新。
-- 修改生成器逻辑或本仓库 README 后，需要发布新的 npm 版本，才能更新 npm 用户拿到的生成器及包说明。
-- 修改模板依赖或核心命令后，在 `admin-template` 执行 `npm run update:presets`，同步并提交纯净版依赖和锁文件快照。
-
-生成器采用手动发布。在本仓库执行：
+修改生成器逻辑或本 README 后，需要递增 npm 版本并发布，npm 用户才能拿到这些修改：
 
 ```sh
 npm version patch --no-git-tag-version
 npm run check
 npm pack --dry-run
-```
-
-将本次改动及同步更新的 `package.json`、`package-lock.json` 提交并推送 Git，确认 npm 登录账号具有发布权限后执行：
-
-```sh
-npm whoami --registry=https://registry.npmjs.org/
+# 提交并推送已检查的修改后发布
 npm publish --access public --registry=https://registry.npmjs.org/
 ```
 
-如果登录失效，先执行 `npm login --auth-type=web --registry=https://registry.npmjs.org/`，按终端提示完成认证。
+登录失效时执行 `npm login --auth-type=web --registry=https://registry.npmjs.org/`。发布后用 `npm view @niping9542/create-nova-admin version dist-tags --json` 确认公开版本。Git 推送不会自动发布 npm。
 
-发布后检查公开版本：
+当前生成器支持 npm 版模板快照，并保留旧版 pnpm 快照兼容能力。模板依赖变更后，在模板仓库执行 `npm run update:presets` 并检查生成结果。
 
-```sh
-npm view @niping9542/create-nova-admin version dist-tags --json --registry=https://registry.npmjs.org/
-```
-
-发布命令提示仍在处理时，稍后再查询公开版本。Git 提交和推送不会自动发布 npm，已经发布的版本不能覆盖；重新发布修改后的内容需要递增版本号。
-
-## 许可证
-
-MIT
-
-## 变更记录与许可
-
-- [变更记录](CHANGELOG.md)：生成器兼容变化及发布约定。
-- [MIT 许可证](LICENSE)：生成器自身源码许可；第三方依赖遵循各自许可证。
-
-生成项目保留后台模板的 `LICENSE`、`CHANGELOG.md` 和 `docs/new-business-page.md`，其中说明新增业务页面以及管理表单的开发约定。
-
-### npm 基准迁移顺序
-
-已发布的 1.0.8 不支持 npm 版模板快照。先验证并手动发布支持 npm 快照的 1.0.9，再将 npm 版模板切换到默认分支。过渡期间，生成器 CI 对旧版模板使用其 pnpm 锁文件验收；新版模板以 npm ci 为准，并补充 pnpm 兼容验收。
+[生成器源码](https://github.com/ni9542/create-nova-admin) · [模板源码](https://github.com/npora/admin-template) · [变更记录](CHANGELOG.md) · [MIT 许可证](LICENSE)。第三方依赖遵循各自许可证。

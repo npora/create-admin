@@ -40,6 +40,20 @@ async function fixture(t) {
     'AGENTS.md': '# Local-only assistant instructions',
     'database/mysql/01-schema.sql': 'CREATE TABLE sys_user (id INT);',
     'database/mysql/02-seed.sql': '-- Basic permissions',
+    'database/mysql/03-dictionaries.sql':
+      '-- Dictionary tables and permissions',
+    'database/mysql/04-query-indexes.sql': '-- Query indexes',
+    'src/views/login/index.vue': '<template>Login</template>',
+    'src/views/dashboard/index.vue': '<template>Dashboard</template>',
+    'src/views/system/dict/index.vue':
+      '<template>Dictionary management</template>',
+    'src/components/DataTable/index.vue':
+      '<template>Table and pagination</template>',
+    'src/components/DataTable/types.ts':
+      'export interface DataTablePagination {}',
+    'src/api/protocol/index.ts':
+      'export const unwrapApiResponse = (value) => value;',
+    'examples/composables/usePaginatedTable.ts': '// Example-only table query',
     'build/optional-examples.ts': 'export {};',
     'scripts/demo.mjs': '// Showcase launcher',
     'scripts/lib/vite.mjs': '// Showcase-only Vite launcher',
@@ -125,6 +139,14 @@ test('starter creation preserves SQL and excludes optional modules, excludes per
   for (const name of [
     'database/mysql/01-schema.sql',
     'database/mysql/02-seed.sql',
+    'database/mysql/03-dictionaries.sql',
+    'database/mysql/04-query-indexes.sql',
+    'src/views/login/index.vue',
+    'src/views/dashboard/index.vue',
+    'src/views/system/dict/index.vue',
+    'src/components/DataTable/index.vue',
+    'src/components/DataTable/types.ts',
+    'src/api/protocol/index.ts',
     'public/favicon.svg',
     'LICENSE',
     'CHANGELOG.md',
@@ -384,6 +406,29 @@ test('CLI flags generate starter by default and accept explicit worker/demo sele
       (await readdir(directory)).includes('examples'),
       preset === 'demo'
     );
+    for (const file of [
+      'src/views/login/index.vue',
+      'src/views/dashboard/index.vue',
+      'src/views/system/dict/index.vue',
+      'src/components/DataTable/index.vue',
+      'src/components/DataTable/types.ts',
+      'src/api/protocol/index.ts',
+      'database/mysql/03-dictionaries.sql',
+      'database/mysql/04-query-indexes.sql'
+    ]) {
+      assert.equal(
+        await readFile(path.join(directory, file), 'utf8'),
+        await readFile(path.join(source, file), 'utf8')
+      );
+    }
+    if (preset === 'demo')
+      assert.equal(
+        await readFile(
+          path.join(directory, 'examples/composables/usePaginatedTable.ts'),
+          'utf8'
+        ),
+        '// Example-only table query'
+      );
     assert.match(result.stdout, /初始化完成/);
     assert.match(result.stdout, /npm install/);
     assert.match(
