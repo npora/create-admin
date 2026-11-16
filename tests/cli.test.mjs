@@ -19,7 +19,7 @@ const run = (args, cwd = root) =>
 test('package name, binary, lock metadata and CLI version agree', async () => {
   const pkg = JSON.parse(await readFile(path.join(root, 'package.json')));
   const lock = JSON.parse(await readFile(path.join(root, 'package-lock.json')));
-  assert.deepEqual(pkg.bin, { 'create-nova-admin': 'bin/index.js' });
+  assert.deepEqual(pkg.bin, { 'create-admin': 'bin/index.js' });
   assert.equal(lock.name, pkg.name);
   assert.equal(lock.packages[''].name, pkg.name);
   assert.deepEqual(lock.packages[''].bin, pkg.bin);

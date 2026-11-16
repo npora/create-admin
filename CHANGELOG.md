@@ -1,6 +1,8 @@
 # 变更记录
 
-## 1.0.11
+## 1.0.12
+
+- npm 包名改为 `@npora/create-admin`，创建命令为 `npx @npora/create-admin`。
 
 - 创建后可选择 npm、pnpm、Yarn 安装依赖，支持 `--install`；安装失败保留项目并提供重试命令。
 - 默认使用与生成器版本一致的模板 Tag，保留 `--ref main` 跟随开发分支的能力。

@@ -19,7 +19,7 @@ const pkg = JSON.parse(
 const program = new Command();
 
 program
-  .name('create-nova-admin')
+  .name('create-admin')
   .version(pkg.version)
   .description('创建 Vue 3 + TypeScript + Element Plus + Pinia 后台项目')
   .argument('[project-name]', '项目名称，例如 my-admin')
@@ -128,9 +128,7 @@ program
       console.log(
         `\n  cd ${project.projectName}\n  ${install && install !== 'skip' ? '' : `${commands.install}\n  `}${commands.start}\n`
       );
-      console.log(
-        '支持 npm、pnpm 或 Yarn，不限制包管理器版本。'
-      );
+      console.log('支持 npm、pnpm 或 Yarn，不限制包管理器版本。');
       if (project.demo)
         console.log('展示需要网络。演示账号：admin，密码：123456。');
       else

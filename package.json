@@ -1,10 +1,10 @@
 {
-  "name": "@niping9542/create-nova-admin",
-  "version": "1.0.11",
+  "name": "@npora/create-admin",
+  "version": "1.0.12",
   "description": "Npora Admin 后台脚手架生成器：核心模式、独立展示与正式权限 SQL",
   "type": "module",
   "bin": {
-    "create-nova-admin": "bin/index.js"
+    "create-admin": "bin/index.js"
   },
   "keywords": [
     "vue",

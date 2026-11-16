@@ -2,7 +2,7 @@
 
 创建简洁、可扩展业务的 Vue 3 + TypeScript + Element Plus + Pinia 后台框架。
 
-生成器从 [admin-template](https://github.com/npora/admin-template) 获取模板，默认使用与生成器版本一致的 Tag（例如 `v1.0.11`），也可通过 `--ref main` 跟随开发分支。基础功能包含登录、首页、布局、动态菜单、用户/部门/角色/菜单/字典管理、按钮权限、个人中心、多语言和主题。
+生成器从 [admin-template](https://github.com/npora/admin-template) 获取模板，默认使用与生成器版本一致的 Tag（例如 `v1.0.12`），也可通过 `--ref main` 跟随开发分支。基础功能包含登录、首页、布局、动态菜单、用户/部门/角色/菜单/字典管理、按钮权限、个人中心、多语言和主题。
 
 ## 在线演示
 
@@ -13,7 +13,7 @@
 ## 创建项目
 
 ```sh
-npx @niping9542/create-nova-admin@latest my-admin --install npm
+npx @npora/create-admin@latest my-admin --install npm
 cd my-admin
 npm run dev
 ```
@@ -21,7 +21,7 @@ npm run dev
 按提示选择模板，直接回车默认创建纯净后台。项目生成后可选择 npm、pnpm、Yarn 或跳过安装；默认跳过。安装成功后打印对应工具的启动命令。也可明确指定：
 
 ```sh
-npx @niping9542/create-nova-admin@latest my-admin --preset starter
+npx @npora/create-admin@latest my-admin --preset starter
 ```
 
 | 模板              | 内容                                             |
@@ -37,7 +37,7 @@ Worker 版先按生成项目的 `workers/api/README.md` 初始化并运行后端
 ### 自动安装依赖
 
 ```sh
-npx @niping9542/create-nova-admin@latest my-admin --yes --install npm
+npx @npora/create-admin@latest my-admin --yes --install npm
 # 也支持 --install pnpm、--install yarn、--install skip
 ```
 
@@ -48,7 +48,7 @@ npx @niping9542/create-nova-admin@latest my-admin --yes --install npm
 创建时指定地址：
 
 ```sh
-npx @niping9542/create-nova-admin@latest my-admin --api-url https://api.example.com
+npx @npora/create-admin@latest my-admin --api-url https://api.example.com
 ```
 
 也可修改生成项目的 `.env.development.local`：
@@ -152,18 +152,20 @@ npm run release:prepare -- patch
 
 ```sh
 # 在 admin-template 中
- git tag v1.0.11
- git push origin v1.0.11
+ git tag v1.0.12
+ git push origin v1.0.12
 # 在 create-admin 中
- git tag v1.0.11
- git push origin v1.0.11
+ git tag v1.0.12
+ git push origin v1.0.12
 ```
 
 示例版本应替换为准备命令打印的版本。Tag 工作流会校验两仓库版本、锁文件和模板快照；不一致时停止发布。生成器发布前从相同 Tag 获取模板并验证三种生成结果，之后自动执行 `npm publish` 并创建 GitHub Release。普通分支推送只运行检查，不发布 npm。
 
 ### 首次配置 npm Trusted Publisher
 
-在 npm 包 `@niping9542/create-nova-admin` 的 Settings → Trusted publishing 添加 GitHub Actions：
+新包首次使用本机 `npm publish --access public` 发布，完成 npm 身份验证；包存在后再配置自动发布。
+
+在 npm 包 `@npora/create-admin` 的 Settings → Trusted publishing 添加 GitHub Actions：
 
 - Organization：`npora`
 - Repository：`create-admin`
