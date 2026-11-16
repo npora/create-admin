@@ -1,6 +1,6 @@
 {
   "name": "@niping9542/create-nova-admin",
-  "version": "1.0.10",
+  "version": "1.0.11",
   "description": "Npora Admin 后台脚手架生成器：核心模式、独立展示与正式权限 SQL",
   "type": "module",
   "bin": {
@@ -29,7 +29,8 @@
   },
   "scripts": {
     "test": "node --test tests/cli.test.mjs tests/create-project.test.mjs",
-    "check": "node --check bin/index.js && node --check src/create-project.js && node --check src/presets.js && node --test tests/cli.test.mjs tests/create-project.test.mjs"
+    "check": "node --check bin/index.js && node --check src/create-project.js && node --check src/presets.js && node --check src/install.js && node --test tests/cli.test.mjs tests/create-project.test.mjs",
+    "release:prepare": "node ../admin-template/scripts/release/prepare.mjs"
   },
   "files": [
     "bin/",

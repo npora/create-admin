@@ -1,0 +1,58 @@
+name: Publish generator
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: github.repository == 'npora/create-admin'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: write
+      id-token: write
+    env:
+      RELEASE_TAG: ${{ github.ref_name }}
+    defaults:
+      run:
+        working-directory: create-nova-admin
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          path: create-nova-admin
+          persist-credentials: false
+      - name: Check out the matching template release
+        uses: actions/checkout@v6
+        with:
+          repository: npora/admin-template
+          ref: ${{ github.ref_name }}
+          path: admin-template
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+          package-manager-cache: false
+      - run: npm install --global npm@11
+      - run: node ../admin-template/scripts/release/verify.mjs "$RELEASE_TAG"
+      - run: npm ci
+      - run: npm run check
+      - run: npm ci --prefix ../admin-template
+      - run: node ../admin-template/scripts/check-presets.mjs . --install
+      - run: npm pack --dry-run
+      - name: Publish npm package with trusted publishing
+        run: npm publish --access public
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view "$RELEASE_TAG" --repo npora/create-admin >/dev/null 2>&1 ||
+            gh release create "$RELEASE_TAG" --repo npora/create-admin --verify-tag --generate-notes

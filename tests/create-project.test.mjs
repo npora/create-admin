@@ -6,6 +6,8 @@ import {
   readFile,
   writeFile,
   symlink,
+  chmod,
+  realpath,
   lstat,
   readdir,
   rm
@@ -515,4 +517,84 @@ test('legacy pnpm snapshot remains readable without pinning the generated manage
     await readFile(path.join(result.directory, 'package.json'), 'utf8')
   );
   assert.equal(pkg.packageManager, undefined);
+});
+
+test('explicit installs use the selected executable and cwd; failures preserve the generated project', async (t) => {
+  const { cwd, source } = await fixture(t);
+  const bin = path.join(cwd, 'test-bin');
+  await mkdir(bin);
+  const body = `const fs = require('node:fs');
+fs.writeFileSync('install-call.json', JSON.stringify({ cwd: process.cwd(), args: process.argv.slice(2) }));
+process.exit(Number(process.env.TEST_INSTALL_EXIT || 0));`;
+  for (const manager of ['npm', 'pnpm', 'yarn']) {
+    if (process.platform === 'win32') {
+      const script = path.join(bin, `${manager}.cjs`);
+      await writeFile(script, body);
+      await writeFile(
+        path.join(bin, `${manager}.cmd`),
+        `@"${process.execPath}" "${script}" %*`
+      );
+    } else {
+      const script = path.join(bin, manager);
+      await writeFile(script, `#!${process.execPath}\n${body}`);
+      await chmod(script, 0o755);
+    }
+  }
+  const cli = fileURLToPath(new URL('../bin/index.js', import.meta.url));
+  const run = (name, manager, exit = '0') =>
+    spawnSync(
+      process.execPath,
+      [cli, name, '--yes', '--template-dir', source, '--install', manager],
+      {
+        cwd,
+        encoding: 'utf8',
+        timeout: 15000,
+        env: {
+          ...process.env,
+          PATH: `${bin}${path.delimiter}${process.env.PATH}`,
+          TEST_INSTALL_EXIT: exit
+        }
+      }
+    );
+  for (const manager of ['npm', 'pnpm', 'yarn']) {
+    const name = `installed-${manager}`;
+    const result = run(name, manager);
+    assert.equal(result.status, 0, result.stderr);
+    const call = JSON.parse(
+      await readFile(path.join(cwd, name, 'install-call.json'), 'utf8')
+    );
+    assert.equal(
+      await realpath(call.cwd),
+      await realpath(path.join(cwd, name))
+    );
+    assert.deepEqual(call.args, ['install']);
+    assert.match(result.stdout, /依赖安装完成/);
+    assert.ok(
+      result.stdout.includes(
+        manager === 'yarn' ? 'yarn dev' : `${manager} run dev`
+      )
+    );
+    assert.equal(
+      JSON.parse(await readFile(path.join(cwd, name, 'package.json')))
+        .packageManager,
+      undefined
+    );
+  }
+  const failed = run('failed-install', 'npm', '9');
+  assert.equal(failed.status, 1);
+  assert.match(failed.stderr, /项目已保留/);
+  assert.ok(
+    (await lstat(path.join(cwd, 'failed-install', 'src/main.ts'))).isFile()
+  );
+  const skipped = run('skipped-install', 'skip');
+  assert.equal(skipped.status, 0);
+  await assert.rejects(
+    lstat(path.join(cwd, 'skipped-install', 'install-call.json')),
+    { code: 'ENOENT' }
+  );
+  const invalid = run('invalid-install', 'npm;echo');
+  assert.equal(invalid.status, 1);
+  await assert.rejects(lstat(path.join(cwd, 'invalid-install')), {
+    code: 'ENOENT'
+  });
 });

@@ -23,6 +23,7 @@ const removeCore = [
   'cloudflare.config.ts',
   'tsconfig.demo.json',
   'build/optional-examples.ts',
+  'build/optional-tools.ts',
   'src/types/examples.d.ts',
   'scripts/demo.mjs',
   'scripts/lib',
@@ -54,6 +55,12 @@ export async function composePreset(directory, preset, original) {
     const expected = { ...original.devDependencies };
     delete expected['@cloudflare/vite-plugin'];
     delete expected.cf;
+    for (const optional of [
+      'rollup-plugin-visualizer',
+      'vite-plugin-compression2'
+    ])
+      if (!Object.hasOwn(core.devDependencies ?? {}, optional))
+        delete expected[optional];
     const equal = (a, b) =>
       JSON.stringify(Object.entries(a ?? {}).sort()) ===
       JSON.stringify(Object.entries(b ?? {}).sort());
@@ -119,10 +126,12 @@ export async function composePreset(directory, preset, original) {
     });
   for (const entry of [
     '.github/workflows/presets.yml',
+    '.github/workflows/release.yml',
+    'scripts/release',
     'scripts/update-presets.mjs',
     'scripts/check-presets.mjs'
   ]) {
-    await rm(path.join(directory, entry), { force: true });
+    await rm(path.join(directory, entry), { force: true, recursive: true });
   }
   await rm(overlays, { recursive: true, force: true });
   const pkg = JSON.parse(
@@ -131,6 +140,7 @@ export async function composePreset(directory, preset, original) {
   delete pkg.packageManager;
   delete pkg.scripts['update:presets'];
   delete pkg.scripts['check:presets'];
+  delete pkg.scripts['release:prepare'];
   await writeFile(
     path.join(directory, 'package.json'),
     JSON.stringify(pkg, null, 2) + '\n'
