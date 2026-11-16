@@ -6,7 +6,7 @@ npm 包名：`@niping9542/create-nova-admin`；[生成器源码](https://github.
 
 ## 在线演示
 
-[打开 Npora Admin 展示网站](https://admin-demo.npora.workers.dev)
+[打开 Npora Admin 展示网站](https://admin.npora.live)
 
 | 账号    | 密码     |
 | ------- | -------- |
