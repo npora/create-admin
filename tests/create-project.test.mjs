@@ -45,6 +45,17 @@ async function fixture(t) {
     'database/mysql/03-dictionaries.sql':
       '-- Dictionary tables and permissions',
     'database/mysql/04-query-indexes.sql': '-- Query indexes',
+    'database/mysql/05-authenticator.sql':
+      '-- Encrypted authenticator bindings',
+    'src/components/AuthenticatorSettings/index.vue':
+      '<template>Optional authenticator</template>',
+    'src/components/DateRangePicker/index.vue':
+      '<template>Zoned date range</template>',
+    'src/config/datetime.ts':
+      'export const defaultTimeZone = "Asia/Shanghai";',
+    'src/types/timezone.ts':
+      'export const TIME_ZONE = { UTC: "UTC", SHANGHAI: "Asia/Shanghai" };',
+    '.env': 'VITE_AUTHENTICATOR_ENABLED=false\n',
     'src/views/login/index.vue': '<template>Login</template>',
     'src/views/dashboard/index.vue': '<template>Dashboard</template>',
     'src/views/system/dict/index.vue':
@@ -55,7 +66,8 @@ async function fixture(t) {
       'export interface DataTablePagination {}',
     'src/api/protocol/index.ts':
       'export const unwrapApiResponse = (value) => value;',
-    'examples/composables/usePaginatedTable.ts': '// Example-only table query',
+    'examples/composables/usePaginatedTable.ts':
+      '// Example-only table query',
     'build/optional-examples.ts': 'export {};',
     'scripts/demo.mjs': '// Showcase launcher',
     'scripts/lib/vite.mjs': '// Showcase-only Vite launcher',
@@ -65,6 +77,8 @@ async function fixture(t) {
     LICENSE: 'MIT License',
     'CHANGELOG.md': '# Template changes',
     'scaffold/core/docs/new-business-page.md': '# Add a page',
+    'scaffold/core/docs/authentication.md':
+      '# Authenticator: administrator creation is immediately active',
     'package-lock.json': JSON.stringify({
       name: 'template',
       lockfileVersion: 3,
@@ -108,13 +122,22 @@ async function fixture(t) {
 
     '.env.development.local': 'PRIVATE_TOKEN=do-not-copy',
     'workers/api/.local/credentials.json': 'do-not-copy',
+    'workers/api/.dev.vars': 'AUTH_TOTP_KEY=private-do-not-copy',
+    'workers/api/.dev.vars.production':
+      'AUTH_TOTP_KEY=private-do-not-copy',
+    'workers/api/.env': 'AUTH_TOTP_KEY=private-do-not-copy',
+    'workers/api/.env.production': 'AUTH_TOTP_KEY=private-do-not-copy',
+    'workers/api/.dev.vars.example': 'AUTH_TOTP_KEY=fill-in-locally',
+    'workers/api/.env.example': 'AUTH_TOTP_ENABLED=false',
     'node_modules/private.txt': 'do-not-copy',
     '.git/config': 'do-not-copy',
     '.cloudflare/cache.json': 'do-not-copy',
     'dist/index.html': 'do-not-copy'
   };
   for (const [name, text] of Object.entries(files)) {
-    await mkdir(path.dirname(path.join(source, name)), { recursive: true });
+    await mkdir(path.dirname(path.join(source, name)), {
+      recursive: true
+    });
     await writeFile(path.join(source, name), text);
   }
   await symlink(
@@ -133,7 +156,9 @@ test('starter creation preserves SQL and excludes optional modules, excludes per
     apiURL: 'https://api.example.com/'
   });
   const target = result.directory;
-  const pkg = JSON.parse(await readFile(path.join(target, 'package.json')));
+  const pkg = JSON.parse(
+    await readFile(path.join(target, 'package.json'))
+  );
   assert.equal(pkg.name, 'my-admin');
   assert.equal(pkg.private, true);
   assert.equal(pkg.packageManager, undefined);
@@ -143,6 +168,12 @@ test('starter creation preserves SQL and excludes optional modules, excludes per
     'database/mysql/02-seed.sql',
     'database/mysql/03-dictionaries.sql',
     'database/mysql/04-query-indexes.sql',
+    'database/mysql/05-authenticator.sql',
+    'src/components/AuthenticatorSettings/index.vue',
+    'src/components/DateRangePicker/index.vue',
+    'src/config/datetime.ts',
+    'src/types/timezone.ts',
+    'docs/authentication.md',
     'src/views/login/index.vue',
     'src/views/dashboard/index.vue',
     'src/views/system/dict/index.vue',
@@ -172,7 +203,9 @@ test('starter creation preserves SQL and excludes optional modules, excludes per
     'scripts/lib',
     'AGENTS.md'
   ]) {
-    await assert.rejects(lstat(path.join(target, name)), { code: 'ENOENT' });
+    await assert.rejects(lstat(path.join(target, name)), {
+      code: 'ENOENT'
+    });
   }
   const env = await readFile(
     path.join(target, '.env.development.local'),
@@ -292,14 +325,21 @@ test('current repository/ref is downloaded and failed or incomplete downloads le
     }),
     /network failed/
   );
-  await assert.rejects(lstat(path.join(cwd, 'failed')), { code: 'ENOENT' });
+  await assert.rejects(lstat(path.join(cwd, 'failed')), {
+    code: 'ENOENT'
+  });
   await rm(path.join(source, 'database/mysql/02-seed.sql'));
   await assert.rejects(
     createProject({ projectName: 'incomplete', cwd, templateDir: source }),
     /模板缺少/
   );
-  await assert.rejects(lstat(path.join(cwd, 'incomplete')), { code: 'ENOENT' });
-  assert.deepEqual((await readdir(cwd)).sort(), ['downloaded', 'template']);
+  await assert.rejects(lstat(path.join(cwd, 'incomplete')), {
+    code: 'ENOENT'
+  });
+  assert.deepEqual((await readdir(cwd)).sort(), [
+    'downloaded',
+    'template'
+  ]);
 });
 
 test('project and API inputs reject traversal, shell text and credentials', () => {
@@ -356,7 +396,22 @@ test('worker preset includes only core frontend and independent backend', async 
   );
   assert.match(pkg.scripts['check:backend'], /workers\/api/);
   assert.doesNotMatch(pkg.scripts['check:backend'], /pnpm|npm run|yarn/);
-  for (const entry of ['examples', 'deploy', 'scaffold', 'workers/api/.local'])
+  for (const example of ['.dev.vars.example', '.env.example'])
+    assert.ok(
+      (
+        await lstat(path.join(result.directory, 'workers/api', example))
+      ).isFile()
+    );
+  for (const entry of [
+    'examples',
+    'deploy',
+    'scaffold',
+    'workers/api/.local',
+    'workers/api/.dev.vars',
+    'workers/api/.dev.vars.production',
+    'workers/api/.env',
+    'workers/api/.env.production'
+  ])
     await assert.rejects(lstat(path.join(result.directory, entry)), {
       code: 'ENOENT'
     });
@@ -364,7 +419,10 @@ test('worker preset includes only core frontend and independent backend', async 
 
 test('presets reject unknown selections, conflicting alias and stale snapshots before creating a project', async (t) => {
   const { cwd, source } = await fixture(t);
-  for (const options of [{ preset: 'other' }, { preset: 'worker', demo: true }])
+  for (const options of [
+    { preset: 'other' },
+    { preset: 'worker', demo: true }
+  ])
     await assert.rejects(
       createProject({
         projectName: 'invalid',
@@ -397,7 +455,10 @@ test('CLI flags generate starter by default and accept explicit worker/demo sele
       source,
       ...(preset === 'starter' ? [] : ['--preset', preset])
     ];
-    const result = spawnSync(process.execPath, args, { cwd, encoding: 'utf8' });
+    const result = spawnSync(process.execPath, args, {
+      cwd,
+      encoding: 'utf8'
+    });
     assert.equal(result.status, 0, result.stderr);
     const directory = path.join(cwd, `cli-${preset}`);
     assert.equal(
@@ -416,7 +477,12 @@ test('CLI flags generate starter by default and accept explicit worker/demo sele
       'src/components/DataTable/types.ts',
       'src/api/protocol/index.ts',
       'database/mysql/03-dictionaries.sql',
-      'database/mysql/04-query-indexes.sql'
+      'database/mysql/04-query-indexes.sql',
+      'database/mysql/05-authenticator.sql',
+      'src/components/AuthenticatorSettings/index.vue',
+      'src/components/DateRangePicker/index.vue',
+      'src/config/datetime.ts',
+      'src/types/timezone.ts'
     ]) {
       assert.equal(
         await readFile(path.join(directory, file), 'utf8'),
@@ -426,7 +492,10 @@ test('CLI flags generate starter by default and accept explicit worker/demo sele
     if (preset === 'demo')
       assert.equal(
         await readFile(
-          path.join(directory, 'examples/composables/usePaginatedTable.ts'),
+          path.join(
+            directory,
+            'examples/composables/usePaginatedTable.ts'
+          ),
           'utf8'
         ),
         '// Example-only table query'
@@ -462,7 +531,9 @@ test('changed source lock requires regeneration and never leaves a project', asy
     createProject({ projectName: 'stale-lock', cwd, templateDir: source }),
     /锁文件快照已过期/
   );
-  await assert.rejects(lstat(path.join(cwd, 'stale-lock')), { code: 'ENOENT' });
+  await assert.rejects(lstat(path.join(cwd, 'stale-lock')), {
+    code: 'ENOENT'
+  });
 });
 
 test('all presets ignore legacy package manager pins without changing the source template', async (t) => {
@@ -500,7 +571,10 @@ test('legacy pnpm snapshot remains readable without pinning the generated manage
   await rm(path.join(source, 'scaffold/core/package-lock.json'));
   const content = 'lockfileVersion: 9.0';
   await writeFile(path.join(source, 'pnpm-lock.yaml'), content);
-  await writeFile(path.join(source, 'scaffold/core/pnpm-lock.yaml'), content);
+  await writeFile(
+    path.join(source, 'scaffold/core/pnpm-lock.yaml'),
+    content
+  );
   await writeFile(
     path.join(source, 'scaffold/metadata.json'),
     JSON.stringify({

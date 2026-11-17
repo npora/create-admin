@@ -65,6 +65,7 @@ const excluded = new Set([
   '.wrangler',
   'coverage',
   '.pnpm-store',
+  '.dev.vars',
   '.DS_Store',
   'report.html'
 ]);
@@ -80,8 +81,16 @@ async function copyTemplate(
     errorOnExist: true,
     filter: async (entry) => {
       const name = path.basename(entry);
+      const workerEnv =
+        path.relative(source, entry).split(path.sep).includes('workers') &&
+        (name === '.env' || name.startsWith('.env.')) &&
+        !name.endsWith('.example');
+      const privateVars =
+        name.startsWith('.dev.vars.') && !name.endsWith('.example');
       return (
         !excluded.has(name) &&
+        !workerEnv &&
+        !privateVars &&
         !name.endsWith('.local') &&
         !name.endsWith('.log') &&
         !(await lstat(entry)).isSymbolicLink()
@@ -167,7 +176,8 @@ export async function createProject({
   ) {
     throw new Error('模板版本必须是有效的分支或标签名称。');
   }
-  const backend = apiURL === undefined ? undefined : normalizeApiURL(apiURL);
+  const backend =
+    apiURL === undefined ? undefined : normalizeApiURL(apiURL);
   const target = path.resolve(cwd, projectName);
   try {
     await lstat(target);
@@ -178,7 +188,9 @@ export async function createProject({
     if (error.code !== 'ENOENT') throw error;
   }
 
-  const temporary = await mkdtemp(path.join(tmpdir(), 'create-nova-admin-'));
+  const temporary = await mkdtemp(
+    path.join(tmpdir(), 'create-nova-admin-')
+  );
   const prepared = path.join(temporary, 'prepared');
   let created = false;
   try {
@@ -231,9 +243,13 @@ export async function createProject({
         : []),
       ''
     ].join('\n');
-    await writeFile(path.join(prepared, '.env.development.local'), config, {
-      mode: 0o600
-    });
+    await writeFile(
+      path.join(prepared, '.env.development.local'),
+      config,
+      {
+        mode: 0o600
+      }
+    );
 
     // 独占创建目标：下载期间出现同名目录时也不覆盖。
     await mkdir(target);

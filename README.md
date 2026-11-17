@@ -1,8 +1,8 @@
-# Create Nova Admin
+# @npora/create-admin
 
 创建简洁、可扩展业务的 Vue 3 + TypeScript + Element Plus + Pinia 后台框架。
 
-生成器从 [admin-template](https://github.com/npora/admin-template) 获取模板，默认使用与生成器版本一致的 Tag（例如 `v1.0.12`），也可通过 `--ref main` 跟随开发分支。基础功能包含登录、首页、布局、动态菜单、用户/部门/角色/菜单/字典管理、按钮权限、个人中心、多语言和主题。
+生成器从 [admin-template](https://github.com/npora/admin-template) 获取模板，默认使用与生成器版本一致的 Tag（例如 `v1.0.13`），也可通过 `--ref main` 跟随开发分支。基础功能包含登录、首页、布局、动态菜单、用户/部门/角色/菜单/字典管理、按钮权限、个人中心、多语言和主题。
 
 ## 在线演示
 
@@ -83,8 +83,19 @@ VITE_API_URL=http://localhost:8080
 2. `02-seed.sql`：基础部门、角色、菜单、按钮权限及授权关系。
 3. `03-dictionaries.sql`：字典类型、数据、选项及权限。
 4. `04-query-indexes.sql`：列表、筛选和树形查询索引。
+5. 可选 `05-authenticator.sql`：验证器加密密钥、绑定与防重放状态；仅在启用验证器时使用。
 
 管理员和密码哈希由实际后端初始化；已有数据库按增量迁移说明升级。Worker 的 SQLite 迁移与 MySQL SQL 分开使用。
+
+### 时区与可选验证器
+
+生成项目默认北京时间（`Asia/Shanghai`），应用设置可切换 31 个常用时区，偏好保存在当前浏览器。默认配置在 `src/config/datetime.ts`，时区枚举在 `src/types/timezone.ts`；公共 `DateRangePicker` 按所选时区展示并输出毫秒时间戳。接口和数据库中的绝对时间统一使用 Unix 毫秒，纯日期字段仍可使用 `YYYY-MM-DD`。
+
+验证器入口由前端 `.env` 的 `VITE_AUTHENTICATOR_ENABLED` 控制，默认 `false`。开启前需接入支持验证器的后端；独立后端的认证默认值在 `workers/api/src/config/auth.mjs`，加密密钥仅使用后端私密环境配置。
+
+超级管理员可在“用户管理 → 更多 → 管理验证器”创建并立即启用，将本次生成的设置密钥交给用户导入自己的 Google Authenticator。用户无需把动态码交给管理员确认，以后自行取码登录。个人中心支持用户自行解绑和重新绑定。流程、接口和 SQL 说明在生成项目的 `docs/authentication.md`；纯净版不附带后端实现，需自行对接。
+
+后端 `.dev.vars`、Worker 内的真实 `.env`、本机 `.local/` 和密钥资料不会复制到生成项目；配置样例可以保留。
 
 ### 开发命令
 
@@ -135,7 +146,7 @@ npm pack --dry-run
 node ../admin-template/scripts/check-presets.mjs .
 ```
 
-CI 在 Node.js 22、24 上检查生成器和打包内容，并使用 npm/pnpm 验证三种模板的独立安装、类型、测试和构建。CI 不发布 npm 或部署网站。生成项目只保留自身的应用 CI。
+CI 在 Node.js 22、24 上检查生成器和打包内容，并使用 npm/pnpm 验证三种模板的独立安装、类型、测试和构建。普通应用与兼容性 CI 不发布 npm 或部署网站；受维护者推送的版本 Tag 触发的发布工作流会发布生成器。生成项目只保留自身的应用 CI。
 
 ## 统一版本和自动发布
 
@@ -152,11 +163,11 @@ npm run release:prepare -- patch
 
 ```sh
 # 在 admin-template 中
- git tag v1.0.12
- git push origin v1.0.12
+ git tag v1.0.13
+ git push origin v1.0.13
 # 在 create-admin 中
- git tag v1.0.12
- git push origin v1.0.12
+ git tag v1.0.13
+ git push origin v1.0.13
 ```
 
 示例版本应替换为准备命令打印的版本。Tag 工作流会校验两仓库版本、锁文件和模板快照；不一致时停止发布。生成器发布前从相同 Tag 获取模板并验证三种生成结果，之后自动执行 `npm publish` 并创建 GitHub Release。普通分支推送只运行检查，不发布 npm。
