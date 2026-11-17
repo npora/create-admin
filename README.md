@@ -2,7 +2,7 @@
 
 创建简洁、可扩展业务的 Vue 3 + TypeScript + Element Plus + Pinia 后台框架。
 
-生成器从 [admin-template](https://github.com/npora/admin-template) 获取模板，默认使用与生成器版本一致的 Tag（例如 `v1.0.13`），也可通过 `--ref main` 跟随开发分支。基础功能包含登录、首页、布局、动态菜单、用户/部门/角色/菜单/字典管理、按钮权限、个人中心、多语言和主题。
+生成器从 [admin-template](https://github.com/npora/admin-template) 获取模板，默认使用与生成器版本一致的 Tag（例如 `v1.0.14`），也可通过 `--ref main` 跟随开发分支。基础功能包含登录、首页、布局、动态菜单、用户/部门/角色/菜单/字典管理、按钮权限、个人中心、多语言和主题。
 
 ## 在线演示
 
@@ -146,45 +146,7 @@ npm pack --dry-run
 node ../admin-template/scripts/check-presets.mjs .
 ```
 
-CI 在 Node.js 22、24 上检查生成器和打包内容，并使用 npm/pnpm 验证三种模板的独立安装、类型、测试和构建。普通应用与兼容性 CI 不发布 npm 或部署网站；受维护者推送的版本 Tag 触发的发布工作流会发布生成器。生成项目只保留自身的应用 CI。
-
-## 统一版本和自动发布
-
-两个仓库使用同一版本号和 `v<版本号>` Tag。只有 `create-admin` 发布 npm；`admin-template` 是私有 npm 包，仅创建 GitHub Release 和源码 Tag。基础功能和依赖在模板仓库维护。
-
-两个本地目录相邻时，在任一仓库运行：
-
-```sh
-npm run release:prepare -- patch
-# 也支持 minor、major，或明确版本号，例如 1.1.0
-```
-
-该命令一次更新两个仓库的 `package.json`、npm 锁文件、纯净版快照及其校验值，不会提交或发布。检查通过并分别提交、推送后，先推送模板 Tag，再推送生成器的同名 Tag：
-
-```sh
-# 在 admin-template 中
- git tag v1.0.13
- git push origin v1.0.13
-# 在 create-admin 中
- git tag v1.0.13
- git push origin v1.0.13
-```
-
-示例版本应替换为准备命令打印的版本。Tag 工作流会校验两仓库版本、锁文件和模板快照；不一致时停止发布。生成器发布前从相同 Tag 获取模板并验证三种生成结果，之后自动执行 `npm publish` 并创建 GitHub Release。普通分支推送只运行检查，不发布 npm。
-
-### 首次配置 npm Trusted Publisher
-
-新包首次使用本机 `npm publish --access public` 发布，完成 npm 身份验证；包存在后再配置自动发布。
-
-在 npm 包 `@npora/create-admin` 的 Settings → Trusted publishing 添加 GitHub Actions：
-
-- Organization：`npora`
-- Repository：`create-admin`
-- Workflow filename：`release.yml`
-- 不填写 Environment（工作流未使用环境）
-- 允许该工作流执行发布操作
-
-此配置需 npm 包管理员完成一次。工作流使用 OIDC，无需保存 npm Token；未配置时 npm 发布会被拒绝，不能把它当作已经启用的线上发布。详见 [npm 官方说明](https://docs.npmjs.com/trusted-publishers/)。
+CI 在 Node.js 22、24 上检查生成器和打包内容，并使用 npm/pnpm 验证三种模板的独立安装、类型、测试和构建。生成项目只保留自身的应用检查。
 
 当前生成器保留旧版 pnpm 快照兼容能力；模板依赖变化后，在模板仓库执行 `npm run update:presets` 并检查生成结果。纯净版与 Worker 版只保留基础开发依赖，不包含构建分析、额外压缩或展示站部署工具。
 
