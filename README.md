@@ -87,13 +87,17 @@ VITE_API_URL=http://localhost:8080
 
 管理员和密码哈希由实际后端初始化；已有数据库按增量迁移说明升级。Worker 的 SQLite 迁移与 MySQL SQL 分开使用。
 
-### 时区与可选验证器
+### 时区与 Google Authenticator
 
 生成项目默认北京时间（`Asia/Shanghai`），应用设置可切换 31 个常用时区，偏好保存在当前浏览器。默认配置在 `src/config/datetime.ts`，时区枚举在 `src/types/timezone.ts`；公共 `DateRangePicker` 按所选时区展示并输出毫秒时间戳。接口和数据库中的绝对时间统一使用 Unix 毫秒，纯日期字段仍可使用 `YYYY-MM-DD`。
 
-验证器入口由前端 `.env` 的 `VITE_AUTHENTICATOR_ENABLED` 控制，默认 `false`。开启前需接入支持验证器的后端；独立后端的认证默认值在 `workers/api/src/config/auth.mjs`，加密密钥仅使用后端私密环境配置。
+三种模板均提供可选的 Google Authenticator（TOTP 动态码）界面，默认关闭。开启步骤如下。
 
-超级管理员可在“用户管理 → 更多 → 管理验证器”创建并立即启用，将本次生成的设置密钥交给用户导入自己的 Google Authenticator。用户无需把动态码交给管理员确认，以后自行取码登录。个人中心支持用户自行解绑和重新绑定。流程、接口和 SQL 说明在生成项目的 `docs/authentication.md`；纯净版不附带后端实现，需自行对接。
+1. 在生成项目根目录的前端 `.env` 中设置 `VITE_AUTHENTICATOR_ENABLED=true`。
+2. Worker 版和展示版使用自有 Worker 后端时，先按 `workers/api/README.md` 完成数据库迁移，再设置 `AUTH_TOTP_ENABLED=true`。将 `AUTH_TOTP_KEY` 配置在后端私密环境中，值为 32 字节随机数据的 64 位小写十六进制字符串。纯净版需要对接支持 TOTP 的自有后端。
+3. 用户可在个人中心的验证器页签创建密钥，导入 Google Authenticator 后输入动态码确认绑定。超级管理员也可在“用户管理 → 更多 → 管理验证器”为其他用户创建并立即启用，用户导入本次生成的设置密钥后即可取码登录。
+
+绑定、解绑、接口和数据库说明见生成项目的 `docs/authentication.md`。
 
 后端 `.dev.vars`、Worker 内的真实 `.env`、本机 `.local/` 和密钥资料不会复制到生成项目；配置样例可以保留。
 
