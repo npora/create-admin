@@ -1,6 +1,6 @@
 {
   "name": "@npora/create-admin",
-  "version": "1.0.15",
+  "version": "1.0.16",
   "description": "Npora Admin 后台脚手架生成器：核心模式、独立展示与正式权限 SQL",
   "type": "module",
   "bin": {
