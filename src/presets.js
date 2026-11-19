@@ -84,9 +84,15 @@ export async function composePreset(directory, preset, original) {
     // Keep common contracts, replace repository-specific usage documentation.
     for (const entry of await readdir(path.join(directory, 'docs'))) {
       if (
-        !['api.md', 'rbac.md', 'i18n.md', 'deployment.md', 'database'].includes(
-          entry
-        )
+        ![
+          'account-management.md',
+          'api.md',
+          'database',
+          'deployment.md',
+          'i18n.md',
+          'images',
+          'rbac.md'
+        ].includes(entry)
       )
         await rm(path.join(directory, 'docs', entry), {
           recursive: true,

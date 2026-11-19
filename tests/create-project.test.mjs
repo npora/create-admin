@@ -97,6 +97,11 @@ async function fixture(t) {
         .digest('hex')
     }),
     'docs/api.md': '# API',
+    'docs/account-management.md':
+      '# Account management\n\n![Account sessions](images/account-management.png)',
+    'docs/images/account-management.png': Buffer.from([
+      137, 80, 78, 71, 13, 10, 26, 10
+    ]),
     '.github/workflows/presets.yml': '# Maintainer integration only',
     'scaffold/core/.github/workflows/ci.yml': '# Application CI',
     'scaffold/demo/README.md': '# Full demo',
@@ -146,6 +151,27 @@ async function fixture(t) {
   );
   return { cwd, source };
 }
+
+test('account help and linked screenshots are included in every preset', async (t) => {
+  const { cwd, source } = await fixture(t);
+  for (const preset of ['starter', 'worker', 'demo']) {
+    const { directory } = await createProject({
+      projectName: `help-${preset}`,
+      cwd,
+      templateDir: source,
+      preset
+    });
+    for (const name of [
+      'docs/account-management.md',
+      'docs/images/account-management.png'
+    ]) {
+      assert.deepEqual(
+        await readFile(path.join(directory, name)),
+        await readFile(path.join(source, name))
+      );
+    }
+  }
+});
 
 test('starter creation preserves SQL and excludes optional modules, excludes personal files and writes fresh configuration', async (t) => {
   const { cwd, source } = await fixture(t);
