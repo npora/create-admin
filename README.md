@@ -34,6 +34,8 @@ npx @npora/create-admin@latest my-admin --preset starter
 
 Worker 版先按生成项目的 `workers/api/README.md` 初始化并运行后端，`npm run dev` 只启动前端。完整演示使用 `npm run dev:demo`，默认连接 `https://api.npora.live`，需要网络；`--demo` 是 `--preset demo` 的快捷方式。
 
+三种模板都保留“系统管理 → 操作审计日志”查询页。有 `system:audit-log:list` 权限的用户可筛选管理员重置密码、验证器启停和角色授权结果。Worker 版和展示版的参考后端应用 `0011_audit_logs.sql` 后提供记录与查询。纯净版由自有后端按生成项目 `docs/api.md` 中的操作审计契约提供数据。
+
 ### 自动安装依赖
 
 ```sh
@@ -77,7 +79,7 @@ VITE_API_URL=http://localhost:8080
 
 ### 正式 SQL
 
-在空 MySQL 数据库中，按生成项目的 `database/mysql/README.md` 依次导入：
+新库可运行 `sh database/mysql/init.sh --user root --password npora_admin` 一次导入基础结构、权限、字典和索引。手动导入及已有库升级时，按生成项目的 `database/mysql/README.md` 选择所需编号：
 
 1. `01-schema.sql`：用户、部门、角色、菜单及关联表，包含索引和约束。
 2. `02-seed.sql`：基础部门、角色、菜单、按钮权限及授权关系。
@@ -86,6 +88,7 @@ VITE_API_URL=http://localhost:8080
 5. 可选 `05-authenticator.sql`：验证器加密密钥、绑定与防重放状态；仅在启用验证器时使用。
 6. `06-sort-indexes.sql`：部门、角色和菜单的全量排序索引，完成基础表初始化后应用。
 7. `07-recent-users-index.sql`：未删除用户按创建时间和 ID 查询的联合索引。
+8. 可选 `08-audit-logs.sql`：操作审计表、查询索引、操作审计菜单和独立查看权限。
 
 管理员和密码哈希由实际后端初始化；已有数据库按增量迁移说明升级。Worker 的 SQLite 迁移与 MySQL SQL 分开使用。
 
