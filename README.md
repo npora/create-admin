@@ -136,7 +136,7 @@ VITE_API_URL=http://localhost:8080
 
 ## 环境与维护
 
-Node.js 要求见 `package.json`；后端检查需要 Node.js 22.13+。以 npm 和 `package-lock.json` 维护，生成项目不设置 `packageManager`，使用者可选择 npm、pnpm 或 Yarn。在线创建需要访问 npm 和 GitHub。
+建议使用 Node.js 24 LTS 创建和运行项目。生成器的版本要求见 `package.json`。以 npm 和 `package-lock.json` 维护，生成项目不设置 `packageManager`，使用者可选择 npm、pnpm 或 Yarn。在线创建需要访问 npm 和 GitHub。
 
 生成器负责获取、组合文件及可选的依赖安装；基础功能、组件、接口及依赖版本在 `admin-template` 维护。只修改模板时，无需重新发布生成器，使用 `--ref main` 创建的项目会获取开发分支的新内容；默认命令获取对应版本 Tag；已经创建的项目不会自动更新。
 
