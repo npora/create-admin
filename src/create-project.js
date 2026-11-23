@@ -51,6 +51,12 @@ export function normalizeApiURL(value) {
   return url.toString().replace(/\/$/, '');
 }
 
+const rootEnvFiles = new Set([
+  '.env',
+  '.env.development',
+  '.env.production'
+]);
+
 const excluded = new Set([
   '.git',
   'AGENTS.md',
@@ -81,14 +87,18 @@ async function copyTemplate(
     errorOnExist: true,
     filter: async (entry) => {
       const name = path.basename(entry);
+      const isEnv = name === '.env' || name.startsWith('.env.');
+      const extraRootEnv =
+        path.dirname(entry) === source && isEnv && !rootEnvFiles.has(name);
       const workerEnv =
         path.relative(source, entry).split(path.sep).includes('workers') &&
-        (name === '.env' || name.startsWith('.env.')) &&
+        isEnv &&
         !name.endsWith('.example');
       const privateVars =
         name.startsWith('.dev.vars.') && !name.endsWith('.example');
       return (
         !excluded.has(name) &&
+        !extraRootEnv &&
         !workerEnv &&
         !privateVars &&
         !name.endsWith('.local') &&
@@ -235,30 +245,39 @@ export async function createProject({
     } catch (error) {
       if (error.code !== 'ENOENT') throw error;
     }
-    const config = [
-      '# 此文件只用于本机开发，不提交版本控制。',
-      ...(demo ? ['VITE_DEMO_ENABLED=true'] : []),
-      ...(!demo || backend
-        ? [`VITE_API_URL=${backend || 'http://localhost:8080'}`]
-        : []),
-      ''
-    ].join('\n');
-    await writeFile(
-      path.join(prepared, '.env.development.local'),
-      config,
-      {
-        mode: 0o600
+    const developmentPath = path.join(prepared, '.env.development');
+    const previousDevelopment = await readFile(developmentPath, 'utf8').catch(
+      (error) => {
+        if (error.code === 'ENOENT') return '';
+        throw error;
       }
     );
+    const developmentApiURL =
+      backend ?? (demo ? undefined : 'http://localhost:8080');
+    const values = new Map([['VITE_DEMO_ENABLED', demo ? 'true' : undefined]]);
+    if (developmentApiURL) values.set('VITE_API_URL', developmentApiURL);
+    const development = previousDevelopment
+      .split(/\r?\n/)
+      .filter((line) => {
+        const key = /^\s*(?:export\s+)?(\w+)\s*=/.exec(line)?.[1];
+        return !values.has(key);
+      })
+      .join('\n')
+      .trimEnd();
+    const settings = [...values]
+      .filter(([, value]) => value !== undefined)
+      .map(([key, value]) => `${key}=${value}`);
+    await writeFile(
+      developmentPath,
+      [development, ...settings].filter(Boolean).join('\n') + '\n'
+    );
+    for (const name of ['.env', '.env.production'])
+      await writeFile(path.join(prepared, name), '', { flag: 'a' });
 
     // 独占创建目标：下载期间出现同名目录时也不覆盖。
     await mkdir(target);
     created = true;
     await copyTemplate(prepared, target, { contentsOnly: true });
-    // 本机环境只由生成器写入，不从模板源继承。
-    await writeFile(path.join(target, '.env.development.local'), config, {
-      mode: 0o600
-    });
     return {
       directory: target,
       projectName,

@@ -56,6 +56,8 @@ async function fixture(t) {
     'src/types/timezone.ts':
       'export const TIME_ZONE = { UTC: "UTC", SHANGHAI: "Asia/Shanghai" };',
     '.env': 'VITE_AUTHENTICATOR_ENABLED=false\n',
+    '.env.development': 'VITE_API_URL=http://localhost:8080\nVITE_APP_TITLE=Fixture\n',
+    '.env.development.local.example': 'PRIVATE_TOKEN=sample-do-not-copy',
     'src/views/login/index.vue': '<template>Login</template>',
     'src/views/dashboard/index.vue': '<template>Dashboard</template>',
     'src/views/error/403.vue': '<template>Access denied</template>',
@@ -253,6 +255,8 @@ test('starter creation preserves SQL and excludes optional modules, excludes per
     'docs/examples.md',
     '.github/workflows/presets.yml',
     'linked-secret',
+    '.env.development.local',
+    '.env.development.local.example',
     'scripts/lib',
     'AGENTS.md'
   ]) {
@@ -261,7 +265,7 @@ test('starter creation preserves SQL and excludes optional modules, excludes per
     });
   }
   const env = await readFile(
-    path.join(target, '.env.development.local'),
+    path.join(target, '.env.development'),
     'utf8'
   );
   assert.doesNotMatch(env, /VITE_DEMO_ENABLED/);
@@ -273,6 +277,9 @@ test('starter creation preserves SQL and excludes optional modules, excludes per
   assert.equal(pkg.scripts['dev:demo'], undefined);
   assert.match(env, /VITE_API_URL=https:\/\/api.example.com\n/);
   assert.doesNotMatch(env, /PRIVATE_TOKEN/);
+  assert.match(env, /^VITE_APP_TITLE=Fixture$/m);
+  assert.equal(env.match(/^VITE_API_URL=/gm).length, 1);
+  assert.equal(await readFile(path.join(target, '.env.production'), 'utf8'), '');
   assert.match(
     await readFile(path.join(source, '.env.development.local'), 'utf8'),
     /PRIVATE_TOKEN/
@@ -300,7 +307,7 @@ test('demo creation prints the real demo command, custom demo API uses the confi
   assert.equal(demoPackage.scripts['check:presets'], undefined);
   assert.match(
     await readFile(
-      path.join(result.directory, '.env.development.local'),
+      path.join(result.directory, '.env.development'),
       'utf8'
     ),
     /VITE_DEMO_ENABLED=true/
@@ -315,7 +322,7 @@ test('demo creation prints the real demo command, custom demo API uses the confi
   assert.equal(custom.startCommand, 'npm run dev');
   assert.match(
     await readFile(
-      path.join(custom.directory, '.env.development.local'),
+      path.join(custom.directory, '.env.development'),
       'utf8'
     ),
     /VITE_API_URL=http:\/\/localhost:9000/

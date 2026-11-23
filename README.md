@@ -22,7 +22,7 @@ npm run dev
 | `worker`          | 核心前端和 Worker 参考后端，按项目内说明初始化后端   |
 | `demo`            | 展示页面和参考后端，使用 `npm run dev:demo` 启动前端 |
 
-通过 `--preset worker` 或 `--preset demo` 选择对应模板。使用自有后端时，可传入 `--api-url https://api.example.com`，也可在生成项目的 `.env.development.local` 中设置 `VITE_API_URL`。
+通过 `--preset worker` 或 `--preset demo` 选择对应模板。使用自有后端时，可传入 `--api-url https://api.example.com`，生成器会写入项目的 `.env.development`。项目根目录提供 `.env`、`.env.development` 和 `.env.production`，分别存放通用、开发和生产配置。
 
 ## 账号与权限
 
