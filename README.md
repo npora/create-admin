@@ -1,6 +1,6 @@
 # @npora/create-admin
 
-创建 Vue 3、TypeScript、Element Plus 和 Pinia 后台项目，内置登录、动态菜单、权限、系统管理和操作审计。
+创建 Vue 3、TypeScript、Element Plus 和 Pinia 后台项目，内置登录、动态菜单、权限、系统管理和操作审计。支持搜索可访问的菜单，并在本机设置主题色、菜单布局和页签风格。
 
 [在线演示](https://admin.npora.live)使用公开账号 `admin` 和演示密码 `123456`。体验会话撤销时，请使用自行创建的测试账号。
 
