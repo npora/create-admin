@@ -24,6 +24,8 @@ npm run dev
 
 通过 `--preset worker` 或 `--preset demo` 选择对应模板。使用自有后端时，可传入 `--api-url https://api.example.com`，生成器会写入项目的 `.env.development`。项目根目录提供 `.env`、`.env.development` 和 `.env.production`，分别存放通用、开发和生产配置。
 
+纯净版保留核心前端、静态资源、MySQL 脚本和开发所需的构建配置、文档与测试。生成项目不包含 Workers、演示页面或部署工具，也没有 `VITE_DEMO_ENABLED`。Google Authenticator 默认关闭。
+
 ## 账号与权限
 
 - 在个人中心查看活跃会话，撤销单个其他会话或退出全部其他会话。
