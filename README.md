@@ -35,6 +35,7 @@ npm run dev
 
 ## 使用文档
 
+- [应用设置、菜单搜索与缓存](https://github.com/npora/admin-template/blob/main/docs/development.md#本地偏好与缓存)
 - [登录、首页和系统管理截图](https://github.com/npora/admin-template/tree/main/docs/showcase) · [会话管理与权限预览](https://github.com/npora/admin-template/blob/main/docs/account-management.md)
 - [接口契约](https://github.com/npora/admin-template/blob/main/docs/api.md) · [接入自有后端](https://github.com/npora/admin-template/blob/main/docs/backend-replacement.md)
 - [MySQL 初始化与迁移](https://github.com/npora/admin-template/tree/main/database/mysql) · [登录与验证器设置](https://github.com/npora/admin-template/blob/main/docs/authentication.md)
