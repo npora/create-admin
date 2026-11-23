@@ -133,7 +133,7 @@ program
         console.log('展示需要网络。演示账号：admin，密码：123456。');
       else
         console.log(
-          '请先启动自己的后端，或修改 .env.development.local 中的 VITE_API_URL。'
+          '请先启动自己的后端，或修改 .env.development 中的 VITE_API_URL。'
         );
       console.log(
         '正式权限 SQL：database/mysql/01-schema.sql → 02-seed.sql → 03-dictionaries.sql → 04-query-indexes.sql。'
