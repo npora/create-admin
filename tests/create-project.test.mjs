@@ -58,6 +58,7 @@ async function fixture(t) {
     '.env': 'VITE_AUTHENTICATOR_ENABLED=false\n',
     'src/views/login/index.vue': '<template>Login</template>',
     'src/views/dashboard/index.vue': '<template>Dashboard</template>',
+    'src/views/error/403.vue': '<template>Access denied</template>',
     'src/views/system/dict/index.vue':
       '<template>Dictionary management</template>',
     'src/components/DataTable/index.vue':
@@ -102,7 +103,11 @@ async function fixture(t) {
     'docs/images/account-management.png': Buffer.from([
       137, 80, 78, 71, 13, 10, 26, 10
     ]),
+    '.github/workflows/browser.yml': '# Maintainer browser checks',
+    '.github/workflows/ci.yml': '# Template CI',
     '.github/workflows/presets.yml': '# Maintainer integration only',
+    'tests/browser/check.spec.mjs': '// Maintainer browser check',
+    'tests/integration/views.test.mjs': '// App integration check',
     'scaffold/core/.github/workflows/ci.yml': '# Application CI',
     'scaffold/demo/README.md': '# Full demo',
     'docs/examples.md': '# Examples',
@@ -169,6 +174,28 @@ test('account help and linked screenshots are included in every preset', async (
         await readFile(path.join(directory, name)),
         await readFile(path.join(source, name))
       );
+    }
+  }
+});
+
+test('every preset retains core authorization and CI checks without maintainer browser checks', async (t) => {
+  const { cwd, source } = await fixture(t);
+  for (const preset of ['starter', 'worker', 'demo']) {
+    const { directory } = await createProject({
+      projectName: `access-${preset}`,
+      cwd,
+      templateDir: source,
+      preset
+    });
+    for (const name of [
+      'src/views/error/403.vue',
+      'tests/integration/views.test.mjs',
+      '.github/workflows/ci.yml'
+    ]) {
+      assert.ok((await lstat(path.join(directory, name))).isFile());
+    }
+    for (const name of ['tests/browser', '.github/workflows/browser.yml']) {
+      await assert.rejects(lstat(path.join(directory, name)), { code: 'ENOENT' });
     }
   }
 });

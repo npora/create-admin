@@ -131,11 +131,13 @@ export async function composePreset(directory, preset, original) {
       force: true
     });
   for (const entry of [
+    '.github/workflows/browser.yml',
     '.github/workflows/presets.yml',
     '.github/workflows/release.yml',
     'scripts/release',
     'scripts/update-presets.mjs',
-    'scripts/check-presets.mjs'
+    'scripts/check-presets.mjs',
+    'tests/browser'
   ]) {
     await rm(path.join(directory, entry), { force: true, recursive: true });
   }
