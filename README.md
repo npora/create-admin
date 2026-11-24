@@ -2,6 +2,8 @@
 
 创建 Vue 3、TypeScript、Element Plus 和 Pinia 后台项目，内置登录、动态菜单、权限、系统管理和操作审计。支持搜索可访问的菜单，并在本机设置主题色、菜单布局和页签风格。
 
+[![操作演示 GIF，展示登录、首页、用户管理和操作审计](https://raw.githubusercontent.com/npora/admin-template/main/docs/showcase/overview.gif)](https://admin.npora.live)
+
 [在线演示](https://admin.npora.live)使用公开账号 `admin` 和演示密码 `123456`。体验会话撤销时，请使用自行创建的测试账号。
 
 ## 快速开始
@@ -22,7 +24,7 @@ npm run dev
 | `worker`          | 核心前端和 Worker 参考后端，按项目内说明初始化后端   |
 | `demo`            | 展示页面和参考后端，使用 `npm run dev:demo` 启动前端 |
 
-通过 `--preset worker` 或 `--preset demo` 选择对应模板。使用自有后端时，可传入 `--api-url https://api.example.com`，生成器会写入项目的 `.env.development`。项目根目录提供 `.env`、`.env.development` 和 `.env.production`，分别存放通用、开发和生产配置。
+通过 `--preset worker` 或 `--preset demo` 选择对应模板。使用自有后端时，可传入 `--api-url https://api.example.com`，生成器会写入项目的 `.env.development`。项目根目录提供 `.env`、`.env.development` 和 `.env.production`，分别存放通用、开发和生产配置。展示版接自有后端时，运行 `npm run dev` 并使用该后端初始化的账号。
 
 纯净版保留核心前端、静态资源、MySQL 脚本和开发所需的构建配置、文档与测试。生成项目不包含 Workers、演示页面或部署工具，也没有 `VITE_DEMO_ENABLED`。Google Authenticator 默认关闭。
 

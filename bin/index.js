@@ -129,14 +129,18 @@ program
         `\n  cd ${project.projectName}\n  ${install && install !== 'skip' ? '' : `${commands.install}\n  `}${commands.start}\n`
       );
       console.log('支持 npm、pnpm 或 Yarn，不限制包管理器版本。');
-      if (project.demo)
+      if (project.demo && options.apiUrl === undefined)
         console.log('展示需要网络。演示账号：admin，密码：123456。');
+      else if (options.apiUrl !== undefined)
+        console.log(
+          '已在 .env.development 配置后端地址，请使用该后端初始化的账号。'
+        );
       else
         console.log(
           '请先启动自己的后端，或修改 .env.development 中的 VITE_API_URL。'
         );
       console.log(
-        '正式权限 SQL：database/mysql/01-schema.sql → 02-seed.sql → 03-dictionaries.sql → 04-query-indexes.sql。'
+        'MySQL 初始化使用 database/mysql/init.sh，已有数据库的升级步骤见 database/mysql/README.md。'
       );
       if (project.preset === 'worker')
         console.log(

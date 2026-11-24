@@ -567,6 +567,11 @@ test('CLI flags generate starter by default and accept explicit worker/demo sele
       preset === 'demo' ? /npm run dev:demo/ : /npm run dev/
     );
     assert.match(result.stdout, /pnpm.*Yarn/);
+    assert.match(result.stdout, /database\/mysql\/init\.sh/);
+    assert.match(result.stdout, /database\/mysql\/README\.md/);
+    if (preset === 'demo') assert.match(result.stdout, /演示账号/);
+    else assert.doesNotMatch(result.stdout, /演示账号/);
+
     assert.doesNotMatch(result.stdout, /包管理器版本：|undefined/);
     const pkg = JSON.parse(
       await readFile(path.join(directory, 'package.json'), 'utf8')
@@ -582,6 +587,37 @@ test('CLI flags generate starter by default and accept explicit worker/demo sele
       preset === 'demo'
     );
   }
+});
+
+test('custom demo CLI uses its own backend and login instructions', async (t) => {
+  const { cwd, source } = await fixture(t);
+  const cli = fileURLToPath(new URL('../bin/index.js', import.meta.url));
+  const result = spawnSync(
+    process.execPath,
+    [
+      cli,
+      'custom-demo-cli',
+      '--yes',
+      '--preset',
+      'demo',
+      '--template-dir',
+      source,
+      '--api-url',
+      'https://api.example.com/v1/$service'
+    ],
+    { cwd, encoding: 'utf8' }
+  );
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /使用该后端初始化的账号/);
+  assert.match(result.stdout, /npm run dev\n/);
+  assert.doesNotMatch(result.stdout, /演示账号|npm run dev:demo/);
+  const env = await readFile(
+    path.join(cwd, 'custom-demo-cli', '.env.development'),
+    'utf8'
+  );
+  assert.ok(
+    env.split('\n').includes('VITE_API_URL=https://api.example.com/v1/\\$service')
+  );
 });
 
 test('changed source lock requires regeneration and never leaves a project', async (t) => {

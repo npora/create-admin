@@ -255,7 +255,11 @@ export async function createProject({
     const developmentApiURL =
       backend ?? (demo ? undefined : 'http://localhost:8080');
     const values = new Map([['VITE_DEMO_ENABLED', demo ? 'true' : undefined]]);
-    if (developmentApiURL) values.set('VITE_API_URL', developmentApiURL);
+    if (developmentApiURL) {
+      // Vite expands dollar signs when loading dotenv files.
+      const escapedApiURL = developmentApiURL.replaceAll('$', () => '\\$');
+      values.set('VITE_API_URL', escapedApiURL);
+    }
     const development = previousDevelopment
       .split(/\r?\n/)
       .filter((line) => {
