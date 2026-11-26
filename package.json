@@ -1,13 +1,14 @@
 {
   "name": "@npora/create-admin",
-  "version": "1.0.25",
-  "description": "Npora Admin 后台脚手架生成器：核心模式、独立展示与正式权限 SQL",
+  "version": "1.0.26",
+  "description": "Npora Admin Vue/React 纯净后台脚手架，内置 MySQL 权限表",
   "type": "module",
   "bin": {
     "create-admin": "bin/index.js"
   },
   "keywords": [
     "vue",
+    "react",
     "admin",
     "cli",
     "scaffolding",

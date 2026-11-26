@@ -38,44 +38,41 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        framework: [vue, react]
         manager: [npm, pnpm]
-    defaults:
-      run:
-        working-directory: admin-template
     steps:
       - name: Check out this generator revision
         uses: actions/checkout@v4
         with:
           path: create-nova-admin
           persist-credentials: false
-      - name: Check out the current template
+      - name: Check out the selected template
         uses: actions/checkout@v4
         with:
-          repository: npora/admin-template
+          repository: ${{ matrix.framework == 'react' && 'npora/admin-template-react' || 'npora/admin-template' }}
           ref: main
-          path: admin-template
+          path: template
           persist-credentials: false
       - uses: pnpm/action-setup@v4
+        if: matrix.manager == 'pnpm'
         with:
           version: 12.3.4
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
           cache-dependency-path: '**/package-lock.json'
       - name: Install generator dependencies
-        run: npm ci --prefix ../create-nova-admin
-      - name: Install template dependencies
+        run: npm ci --prefix create-nova-admin
+      - name: Generate and install a starter project
+        env:
+          FRAMEWORK: ${{ matrix.framework }}
+          MANAGER: ${{ matrix.manager }}
         run: |
-          if [ -f package-lock.json ]; then
-            npm ci
-          else
-            pnpm install --frozen-lockfile
-          fi
-      - name: Generate, install and check all three presets
+          node create-nova-admin/bin/index.js generated-admin --yes \
+            --framework "$FRAMEWORK" --template-dir template --install "$MANAGER"
+      - name: Check and build the generated project
+        working-directory: generated-admin
         run: |
-          if [ -f package-lock.json ]; then
-            node scripts/check-presets.mjs ../create-nova-admin --install --manager=${{ matrix.manager }}
-          else
-            node scripts/check-presets.mjs ../create-nova-admin --install --manager=pnpm
-          fi
+          npm run check:all
+          npm run build

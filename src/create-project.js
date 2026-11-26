@@ -11,9 +11,12 @@ import {
 import path from 'node:path';
 import { tmpdir } from 'node:os';
 import { downloadTemplate } from 'giget';
-import { composePreset, PRESETS, resolvePreset } from './presets.js';
+import { composePreset, FRAMEWORKS, resolveFramework, resolvePreset } from './presets.js';
 
-export const TEMPLATE_REPOSITORY = 'github:npora/admin-template';
+const TEMPLATE_REPOSITORIES = {
+  vue: 'github:npora/admin-template',
+  react: 'github:npora/admin-template-react'
+};
 
 export function validateProjectName(name) {
   if (
@@ -122,47 +125,71 @@ async function copyTemplate(
   }
 }
 
-async function validateTemplate(directory) {
+async function validateTemplate(directory, framework) {
+  const metadataPath = path.join(directory, 'scaffold/metadata.json');
+  let legacyVue = false;
+  if (framework === 'vue') {
+    try {
+      legacyVue = (await lstat(metadataPath)).isFile();
+    } catch (error) {
+      if (error.code !== 'ENOENT') throw error;
+    }
+  }
   const required = [
-    'src/main.ts',
+    framework === 'vue' ? 'src/main.ts' : 'src/main.tsx',
     'database/mysql/01-schema.sql',
-    'database/mysql/02-seed.sql',
-    'build/optional-examples.ts',
-    'scripts/demo.mjs',
-    'scaffold/metadata.json',
-    'scaffold/demo/README.md',
-    'scaffold/core/package.json',
-    'scaffold/core/vite.config.ts',
-    'scaffold/core/src/router/extensions.ts',
-    'scaffold/worker/workers/api/src/config/pages.mjs',
-    'scaffold/worker/workers/api/migrations/0002_seed.sql'
+    'database/mysql/02-seed.sql'
   ];
+  if (legacyVue) {
+    const metadata = JSON.parse(await readFile(metadataPath, 'utf8'));
+    const lockfile =
+      metadata.version === 2 ? 'package-lock.json' : 'pnpm-lock.yaml';
+    required.push(
+      lockfile,
+      `scaffold/core/${lockfile}`,
+      'scaffold/core/package.json',
+      'scaffold/core/vite.config.ts',
+      'scaffold/core/src/router/extensions.ts'
+    );
+  } else {
+    required.push('package-lock.json', 'vite.config.ts');
+    for (const entry of [
+      'examples',
+      'deploy',
+      'workers',
+      'src/views/examples',
+      'src/views/dashboard/demo'
+    ]) {
+      try {
+        const location = path.join(directory, entry);
+        if (
+          !(await lstat(location)).isDirectory() ||
+          (await readdir(location, { recursive: true, withFileTypes: true }))
+            .some((child) => !child.isDirectory())
+        ) {
+          throw new Error(`模板包含 ${entry}，请使用纯净版模板。`);
+        }
+        await rm(location, { recursive: true });
+      } catch (error) {
+        if (error.code !== 'ENOENT') throw error;
+      }
+    }
+  }
   for (const file of required) {
     try {
       if (!(await lstat(path.join(directory, file))).isFile())
         throw new Error();
     } catch {
-      throw new Error(
-        `模板缺少 ${file}，请使用已完成核心/展示分离的新版本模板。`
-      );
+      throw new Error(`模板缺少 ${file}，请使用对应框架的纯净版模板。`);
     }
-  }
-  const metadata = JSON.parse(
-    await readFile(path.join(directory, 'scaffold/metadata.json'), 'utf8')
-  );
-  const lockfile =
-    metadata.version === 2 ? 'package-lock.json' : 'pnpm-lock.yaml';
-  for (const file of [lockfile, `scaffold/core/${lockfile}`]) {
-    if (!(await lstat(path.join(directory, file))).isFile())
-      throw new Error(`模板缺少 ${file}。`);
   }
   const pkg = JSON.parse(
     await readFile(path.join(directory, 'package.json'), 'utf8')
   );
-  if (!pkg.scripts?.dev || !pkg.scripts?.['dev:demo']) {
-    throw new Error('模板缺少当前开发或展示命令。');
+  if (!pkg.scripts?.dev || !pkg.scripts?.build) {
+    throw new Error('模板缺少开发或构建命令。');
   }
-  return pkg;
+  return { pkg, legacyVue };
 }
 
 export async function createProject({
@@ -170,6 +197,7 @@ export async function createProject({
   cwd = process.cwd(),
   demo = false,
   preset,
+  framework,
   apiURL,
   ref = 'main',
   templateDir,
@@ -177,7 +205,7 @@ export async function createProject({
 }) {
   validateProjectName(projectName);
   const selected = resolvePreset(preset, demo);
-  demo = selected === 'demo';
+  framework = resolveFramework(framework);
   if (
     !/^[a-zA-Z0-9][a-zA-Z0-9._/-]*$/.test(ref) ||
     ref.includes('..') ||
@@ -220,15 +248,15 @@ export async function createProject({
       await copyTemplate(source, prepared);
     } else {
       const downloaded = path.join(temporary, 'downloaded');
-      await download(`${TEMPLATE_REPOSITORY}#${ref}`, {
+      await download(`${TEMPLATE_REPOSITORIES[framework]}#${ref}`, {
         dir: downloaded,
         force: false,
         registry: false
       });
       await copyTemplate(downloaded, prepared);
     }
-    const original = await validateTemplate(prepared);
-    const pkg = await composePreset(prepared, selected, original);
+    const { pkg: original, legacyVue } = await validateTemplate(prepared, framework);
+    const pkg = await composePreset(prepared, original, legacyVue);
     pkg.name = projectName;
     pkg.private = true;
     await writeFile(
@@ -253,8 +281,8 @@ export async function createProject({
       }
     );
     const developmentApiURL =
-      backend ?? (demo ? undefined : 'http://localhost:8080');
-    const values = new Map([['VITE_DEMO_ENABLED', demo ? 'true' : undefined]]);
+      backend ?? 'http://localhost:8080';
+    const values = new Map([['VITE_DEMO_ENABLED', undefined]]);
     if (developmentApiURL) {
       // Vite expands dollar signs when loading dotenv files.
       const escapedApiURL = developmentApiURL.replaceAll('$', () => '\\$');
@@ -285,10 +313,10 @@ export async function createProject({
     return {
       directory: target,
       projectName,
-      demo,
+      framework,
       preset: selected,
-      presetLabel: PRESETS[selected],
-      startCommand: demo && !backend ? 'npm run dev:demo' : 'npm run dev'
+      presetLabel: `${FRAMEWORKS[framework]} 纯净后台`,
+      startCommand: 'npm run dev'
     };
   } catch (error) {
     if (created) await rm(target, { recursive: true, force: true });

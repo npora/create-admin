@@ -36,6 +36,13 @@ jobs:
           ref: ${{ github.ref_name }}
           path: admin-template
           persist-credentials: false
+      - name: Check out the React template
+        uses: actions/checkout@v6
+        with:
+          repository: npora/admin-template-react
+          ref: main
+          path: admin-template-react
+          persist-credentials: false
       - uses: actions/setup-node@v6
         with:
           node-version: 24
@@ -45,8 +52,20 @@ jobs:
       - run: node ../admin-template/scripts/release/verify.mjs "$RELEASE_TAG"
       - run: npm ci
       - run: npm run check
-      - run: npm ci --prefix ../admin-template
-      - run: node ../admin-template/scripts/check-presets.mjs . --install
+      - name: Generate, install and check both starter projects
+        run: |
+          cd ..
+          for framework in vue react; do
+            template=admin-template
+            if [ "$framework" = react ]; then template=admin-template-react; fi
+            node create-nova-admin/bin/index.js "generated-$framework" --yes \
+              --framework "$framework" --template-dir "$template" --install npm
+            (
+              cd "generated-$framework"
+              npm run check:all
+              npm run build
+            )
+          done
       - run: npm pack --dry-run
       - name: Publish npm package with trusted publishing
         run: |

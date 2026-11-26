@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 
-import { Command } from 'commander';
+import { Command, Option } from 'commander';
 import { createInterface } from 'node:readline/promises';
 import { readFile } from 'node:fs/promises';
 import ora from 'ora';
 import chalk from 'chalk';
 import { createProject } from '../src/create-project.js';
-import { PRESETS, resolvePreset } from '../src/presets.js';
+import { FRAMEWORKS, resolveFramework, resolvePreset } from '../src/presets.js';
 import {
   installProject,
   projectCommands,
@@ -17,21 +17,34 @@ const pkg = JSON.parse(
   await readFile(new URL('../package.json', import.meta.url), 'utf8')
 );
 const program = new Command();
+const onlineLinks = [
+  ['官网', 'https://www.npora.live/'],
+  ['Vue 后台演示', 'https://admin.npora.live/'],
+  ['React 后台演示', 'https://react.npora.live/'],
+  ['Request 控制台', 'https://request.npora.live/']
+];
 
 program
   .name('create-admin')
   .version(pkg.version)
-  .description('创建 Vue 3 + TypeScript + Element Plus + Pinia 后台项目')
+  .description('创建 Vue 或 React 纯净后台项目')
   .argument('[project-name]', '项目名称，例如 my-admin')
   .option('-y, --yes', '无交互创建；未指定名称时使用 nova-admin-app')
-  .option('--preset <preset>', '模板：starter（默认）、worker、demo')
-  .option('--demo', '完整演示模板，等同 --preset demo')
+  .option('--framework <framework>', '框架：vue（默认）、react')
+  .option('--preset <preset>', '兼容参数，支持 starter')
+  .addOption(new Option('--demo').hideHelp())
   .option('--api-url <url>', '配置自己的 HTTP 后端地址')
-  .option('--ref <ref>', '模板分支或标签', `v${pkg.version}`)
+  .option('--ref <ref>', '模板分支或标签（Vue 默认为生成器同版本标签，React 默认为 main）')
   .option('--install <manager>', '创建后安装依赖：npm、pnpm、yarn、skip')
   .option('--template-dir <directory>', '从本地模板创建，供离线开发和验证')
+  .addHelpText(
+    'after',
+    `\n在线资源：\n${onlineLinks.map(([label, url]) => `  ${label} ${url}`).join('\n')}\n`
+  )
   .action(async (projectName, options) => {
-    let preset = options.preset;
+    const preset = resolvePreset(options.preset, options.demo);
+    let framework =
+      options.framework === undefined ? undefined : resolveFramework(options.framework);
     let install = resolveInstallChoice(options.install);
     let project;
     if (!projectName && !options.yes && !process.stdin.isTTY)
@@ -39,7 +52,7 @@ program
     if (
       process.stdin.isTTY &&
       !options.yes &&
-      (!projectName || (!preset && !options.demo))
+      (!projectName || !framework)
     ) {
       const prompt = createInterface({
         input: process.stdin,
@@ -50,22 +63,15 @@ program
           projectName =
             (await prompt.question('项目名称 (nova-admin-app): ')).trim() ||
             'nova-admin-app';
-        if (!preset && !options.demo) {
-          console.log(
-            '选择模板：\n  1. 纯净后台（默认）\n  2. 后台 + Worker 后端\n  3. 完整演示'
-          );
-          while (!preset) {
-            const answer =
-              (await prompt.question('请选择 (1): ')).trim() || '1';
-            preset = {
-              1: 'starter',
-              2: 'worker',
-              3: 'demo',
-              starter: 'starter',
-              worker: 'worker',
-              demo: 'demo'
-            }[answer];
-            if (!preset) console.log('请输入 1、2、3 或模板名称。');
+        if (!framework) {
+          console.log('选择框架：\n  1. Vue（默认）\n  2. React');
+          while (!framework) {
+            const answer = (await prompt.question('请选择 (1): ')).trim() || '1';
+            framework = { 1: 'vue', 2: 'react', vue: 'vue', react: 'react' }[answer];
+            if (!Object.hasOwn(FRAMEWORKS, framework)) {
+              framework = undefined;
+              console.log('请输入 1、2 或框架名称。');
+            }
           }
         }
       } finally {
@@ -73,7 +79,7 @@ program
       }
     }
     projectName ||= 'nova-admin-app';
-    preset = resolvePreset(preset, options.demo);
+    framework = resolveFramework(framework);
     const spinner = ora(
       options.templateDir ? '正在准备本地模板…' : '正在获取 Npora Admin 模板…'
     ).start();
@@ -82,6 +88,8 @@ program
         projectName,
         ...options,
         preset,
+        framework,
+        ref: options.ref ?? (framework === 'vue' ? `v${pkg.version}` : 'main'),
         apiURL: options.apiUrl
       });
       spinner.succeed('项目已创建');
@@ -129,9 +137,7 @@ program
         `\n  cd ${project.projectName}\n  ${install && install !== 'skip' ? '' : `${commands.install}\n  `}${commands.start}\n`
       );
       console.log('支持 npm、pnpm 或 Yarn，不限制包管理器版本。');
-      if (project.demo && options.apiUrl === undefined)
-        console.log('展示需要网络。演示账号：admin，密码：123456。');
-      else if (options.apiUrl !== undefined)
+      if (options.apiUrl !== undefined)
         console.log(
           '已在 .env.development 配置后端地址，请使用该后端初始化的账号。'
         );
@@ -142,13 +148,9 @@ program
       console.log(
         'MySQL 初始化使用 database/mysql/init.sh，已有数据库的升级步骤见 database/mysql/README.md。'
       );
-      if (project.preset === 'worker')
-        console.log(
-          '后端源码：workers/api/；先迁移数据库并初始化账号，再配置自己的 API 地址。'
-        );
-      console.log(
-        `已生成${PRESETS[project.preset]}所需文件，无需手动删除演示目录。`
-      );
+      console.log(chalk.bold.cyan('\n在线资源与演示'));
+      for (const [label, url] of onlineLinks)
+        console.log(`  ${chalk.bold(label)}  ${chalk.cyan(url)}`);
     } catch (error) {
       if (!project) spinner.fail('项目创建失败');
       else {

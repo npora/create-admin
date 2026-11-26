@@ -2,19 +2,23 @@ import { cp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
 
-export const PRESETS = {
-  starter: '纯净后台',
-  worker: '后台 + Worker 后端',
-  demo: '完整演示'
+export const FRAMEWORKS = {
+  vue: 'Vue',
+  react: 'React'
 };
 
-export function resolvePreset(preset, demo = false) {
-  const selected = preset ?? (demo ? 'demo' : 'starter');
-  if (!Object.hasOwn(PRESETS, selected))
-    throw new Error('模板仅支持 starter、worker、demo。');
-  if (demo && selected !== 'demo')
-    throw new Error('--demo 不能与其他 --preset 同时使用。');
-  return selected;
+export function resolveFramework(framework = 'vue') {
+  if (!Object.hasOwn(FRAMEWORKS, framework))
+    throw new Error('框架仅支持 vue、react。');
+  return framework;
+}
+
+export function resolvePreset(preset = 'starter', demo = false) {
+  if (demo || preset === 'worker' || preset === 'demo')
+    throw new Error('已移除 worker 和 demo 预设；请使用纯净模板，或访问在线演示。');
+  if (preset !== 'starter')
+    throw new Error('模板仅支持 starter 纯净版。');
+  return preset;
 }
 
 const removeCore = [
@@ -32,9 +36,9 @@ const removeCore = [
 ];
 
 // Compose data files only; never execute scripts from a downloaded template.
-export async function composePreset(directory, preset, original) {
+export async function composePreset(directory, original, legacyVue) {
   const overlays = path.join(directory, 'scaffold');
-  if (preset !== 'demo') {
+  if (legacyVue) {
     const metadata = JSON.parse(
       await readFile(path.join(overlays, 'metadata.json'), 'utf8')
     );
@@ -76,11 +80,7 @@ export async function composePreset(directory, preset, original) {
       );
     for (const entry of removeCore)
       await rm(path.join(directory, entry), { recursive: true, force: true });
-    if (preset === 'starter')
-      await rm(path.join(directory, 'workers'), {
-        recursive: true,
-        force: true
-      });
+    await rm(path.join(directory, 'workers'), { recursive: true, force: true });
     // Keep common contracts, replace repository-specific usage documentation.
     for (const entry of await readdir(path.join(directory, 'docs'))) {
       if (
@@ -103,33 +103,7 @@ export async function composePreset(directory, preset, original) {
       recursive: true,
       force: true
     });
-    if (preset === 'worker') {
-      await cp(path.join(overlays, 'worker'), directory, {
-        recursive: true,
-        force: true
-      });
-      await rm(path.join(directory, 'workers/api/integration'), {
-        recursive: true,
-        force: true
-      });
-      core.scripts['check:backend'] =
-        'node workers/api/scripts/build.mjs && node scripts/run-tests.mjs --backend';
-      await writeFile(
-        path.join(directory, 'package.json'),
-        JSON.stringify(core, null, 2) + '\n'
-      );
-      await writeFile(
-        path.join(directory, 'README.md'),
-        '\n## 已选择 Worker 后端\n\n项目包含 `workers/api/`，使用前先完成数据库迁移和账号初始化，再配置自己的 API 地址。`npm run check:backend` 检查后端。见 [后端说明](workers/api/README.md)。\n',
-        { flag: 'a' }
-      );
-    }
   }
-  if (preset === 'demo')
-    await cp(path.join(overlays, 'demo'), directory, {
-      recursive: true,
-      force: true
-    });
   for (const entry of [
     '.github/workflows/browser.yml',
     '.github/workflows/presets.yml',
@@ -149,6 +123,9 @@ export async function composePreset(directory, preset, original) {
   delete pkg.scripts['update:presets'];
   delete pkg.scripts['check:presets'];
   delete pkg.scripts['release:prepare'];
+  if (pkg.scripts['check:all'] === 'npm run check && node --test scripts/release/release.test.mjs') {
+    pkg.scripts['check:all'] = 'npm run check';
+  }
   await writeFile(
     path.join(directory, 'package.json'),
     JSON.stringify(pkg, null, 2) + '\n'

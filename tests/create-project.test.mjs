@@ -33,6 +33,7 @@ async function fixture(t) {
       private: true,
       scripts: {
         dev: 'vite',
+        build: 'vite build',
         'dev:demo': 'node scripts/demo.mjs',
         'update:presets': 'node scripts/update-presets.mjs',
         'check:presets': 'node scripts/check-presets.mjs'
@@ -111,14 +112,13 @@ async function fixture(t) {
     'tests/browser/check.spec.mjs': '// Maintainer browser check',
     'tests/integration/views.test.mjs': '// App integration check',
     'scaffold/core/.github/workflows/ci.yml': '# Application CI',
-    'scaffold/demo/README.md': '# Full demo',
     'docs/examples.md': '# Examples',
     'deploy/cloudflare/index.mjs': '// deploy',
     'cloudflare.config.ts': '// deployment config',
     'scaffold/core/package.json': JSON.stringify({
       name: 'template',
       private: true,
-      scripts: { dev: 'vite' }
+      scripts: { dev: 'vite', build: 'vite build' }
     }),
     'scaffold/core/package-lock.json': JSON.stringify({
       name: 'template',
@@ -127,11 +127,6 @@ async function fixture(t) {
     }),
     'scaffold/core/vite.config.ts': '// Core only',
     'scaffold/core/src/router/extensions.ts': '// Empty routes',
-    'scaffold/worker/workers/api/src/config/pages.mjs':
-      '// Core page catalogue',
-    'scaffold/worker/workers/api/migrations/0002_seed.sql':
-      '-- Core permissions',
-
     '.env.development.local': 'PRIVATE_TOKEN=do-not-copy',
     'workers/api/.local/credentials.json': 'do-not-copy',
     'workers/api/.dev.vars': 'AUTH_TOTP_KEY=private-do-not-copy',
@@ -159,46 +154,40 @@ async function fixture(t) {
   return { cwd, source };
 }
 
-test('account help and linked screenshots are included in every preset', async (t) => {
+test('account help and linked screenshots are included in the starter', async (t) => {
   const { cwd, source } = await fixture(t);
-  for (const preset of ['starter', 'worker', 'demo']) {
-    const { directory } = await createProject({
-      projectName: `help-${preset}`,
-      cwd,
-      templateDir: source,
-      preset
-    });
-    for (const name of [
-      'docs/account-management.md',
-      'docs/images/account-management.png'
-    ]) {
-      assert.deepEqual(
-        await readFile(path.join(directory, name)),
-        await readFile(path.join(source, name))
-      );
-    }
+  const { directory } = await createProject({
+    projectName: `help-starter`,
+    cwd,
+    templateDir: source
+  });
+  for (const name of [
+    'docs/account-management.md',
+    'docs/images/account-management.png'
+  ]) {
+    assert.deepEqual(
+      await readFile(path.join(directory, name)),
+      await readFile(path.join(source, name))
+    );
   }
 });
 
-test('every preset retains core authorization and CI checks without maintainer browser checks', async (t) => {
+test('starter retains core authorization and CI checks without maintainer browser checks', async (t) => {
   const { cwd, source } = await fixture(t);
-  for (const preset of ['starter', 'worker', 'demo']) {
-    const { directory } = await createProject({
-      projectName: `access-${preset}`,
-      cwd,
-      templateDir: source,
-      preset
-    });
-    for (const name of [
-      'src/views/error/403.vue',
-      'tests/integration/views.test.mjs',
-      '.github/workflows/ci.yml'
-    ]) {
-      assert.ok((await lstat(path.join(directory, name))).isFile());
-    }
-    for (const name of ['tests/browser', '.github/workflows/browser.yml']) {
-      await assert.rejects(lstat(path.join(directory, name)), { code: 'ENOENT' });
-    }
+  const { directory } = await createProject({
+    projectName: `access-starter`,
+    cwd,
+    templateDir: source
+  });
+  for (const name of [
+    'src/views/error/403.vue',
+    'tests/integration/views.test.mjs',
+    '.github/workflows/ci.yml'
+  ]) {
+    assert.ok((await lstat(path.join(directory, name))).isFile());
+  }
+  for (const name of ['tests/browser', '.github/workflows/browser.yml']) {
+    await assert.rejects(lstat(path.join(directory, name)), { code: 'ENOENT' });
   }
 });
 
@@ -283,49 +272,6 @@ test('starter creation preserves SQL and excludes optional modules, excludes per
   assert.match(
     await readFile(path.join(source, '.env.development.local'), 'utf8'),
     /PRIVATE_TOKEN/
-  );
-});
-
-test('demo creation prints the real demo command, custom demo API uses the configured dev entry', async (t) => {
-  const { cwd, source } = await fixture(t);
-  const result = await createProject({
-    projectName: 'showcase',
-    cwd,
-    templateDir: source,
-    demo: true
-  });
-  assert.equal(result.startCommand, 'npm run dev:demo');
-  await assert.rejects(
-    lstat(path.join(result.directory, '.github/workflows/presets.yml')),
-    { code: 'ENOENT' }
-  );
-  const demoPackage = JSON.parse(
-    await readFile(path.join(result.directory, 'package.json'))
-  );
-  assert.equal(demoPackage.packageManager, undefined);
-  assert.equal(demoPackage.scripts['update:presets'], undefined);
-  assert.equal(demoPackage.scripts['check:presets'], undefined);
-  assert.match(
-    await readFile(
-      path.join(result.directory, '.env.development'),
-      'utf8'
-    ),
-    /VITE_DEMO_ENABLED=true/
-  );
-  const custom = await createProject({
-    projectName: 'custom-demo',
-    cwd,
-    templateDir: source,
-    demo: true,
-    apiURL: 'http://localhost:9000'
-  });
-  assert.equal(custom.startCommand, 'npm run dev');
-  assert.match(
-    await readFile(
-      path.join(custom.directory, '.env.development'),
-      'utf8'
-    ),
-    /VITE_API_URL=http:\/\/localhost:9000/
   );
 });
 
@@ -429,59 +375,13 @@ test('project and API inputs reject traversal, shell text and credentials', () =
   }
 });
 
-test('worker preset includes only core frontend and independent backend', async (t) => {
-  const { cwd, source } = await fixture(t);
-  const result = await createProject({
-    projectName: 'with-worker',
-    cwd,
-    templateDir: source,
-    preset: 'worker'
-  });
-  assert.equal(result.preset, 'worker');
-  assert.equal(result.startCommand, 'npm run dev');
-  assert.ok(
-    (
-      await lstat(path.join(result.directory, 'workers/api/src/index.mjs'))
-    ).isFile()
-  );
-  assert.equal(
-    await readFile(
-      path.join(result.directory, 'workers/api/src/config/pages.mjs'),
-      'utf8'
-    ),
-    '// Core page catalogue'
-  );
-  const pkg = JSON.parse(
-    await readFile(path.join(result.directory, 'package.json'))
-  );
-  assert.match(pkg.scripts['check:backend'], /workers\/api/);
-  assert.doesNotMatch(pkg.scripts['check:backend'], /pnpm|npm run|yarn/);
-  for (const example of ['.dev.vars.example', '.env.example'])
-    assert.ok(
-      (
-        await lstat(path.join(result.directory, 'workers/api', example))
-      ).isFile()
-    );
-  for (const entry of [
-    'examples',
-    'deploy',
-    'scaffold',
-    'workers/api/.local',
-    'workers/api/.dev.vars',
-    'workers/api/.dev.vars.production',
-    'workers/api/.env',
-    'workers/api/.env.production'
-  ])
-    await assert.rejects(lstat(path.join(result.directory, entry)), {
-      code: 'ENOENT'
-    });
-});
-
-test('presets reject unknown selections, conflicting alias and stale snapshots before creating a project', async (t) => {
+test('presets reject unsupported selections and stale snapshots before creating a project', async (t) => {
   const { cwd, source } = await fixture(t);
   for (const options of [
     { preset: 'other' },
-    { preset: 'worker', demo: true }
+    { preset: 'worker' },
+    { preset: 'demo' },
+    { demo: true }
   ])
     await assert.rejects(
       createProject({
@@ -490,7 +390,7 @@ test('presets reject unknown selections, conflicting alias and stale snapshots b
         templateDir: source,
         ...options
       }),
-      /模板|--demo/
+      /模板|已移除/
     );
   await writeFile(
     path.join(source, 'scaffold/core/package.json'),
@@ -503,103 +403,17 @@ test('presets reject unknown selections, conflicting alias and stale snapshots b
   await assert.rejects(lstat(path.join(cwd, 'stale')), { code: 'ENOENT' });
 });
 
-test('CLI flags generate starter by default and accept explicit worker/demo selections', async (t) => {
-  const { cwd, source } = await fixture(t);
-  const cli = fileURLToPath(new URL('../bin/index.js', import.meta.url));
-  for (const preset of ['starter', 'worker', 'demo']) {
-    const args = [
-      cli,
-      `cli-${preset}`,
-      '--yes',
-      '--template-dir',
-      source,
-      ...(preset === 'starter' ? [] : ['--preset', preset])
-    ];
-    const result = spawnSync(process.execPath, args, {
-      cwd,
-      encoding: 'utf8'
-    });
-    assert.equal(result.status, 0, result.stderr);
-    const directory = path.join(cwd, `cli-${preset}`);
-    assert.equal(
-      (await readdir(directory)).includes('workers'),
-      preset !== 'starter'
-    );
-    assert.equal(
-      (await readdir(directory)).includes('examples'),
-      preset === 'demo'
-    );
-    for (const file of [
-      'src/views/login/index.vue',
-      'src/views/dashboard/index.vue',
-      'src/views/system/dict/index.vue',
-      'src/components/DataTable/index.vue',
-      'src/components/DataTable/types.ts',
-      'src/api/protocol/index.ts',
-      'database/mysql/03-dictionaries.sql',
-      'database/mysql/04-query-indexes.sql',
-      'database/mysql/05-authenticator.sql',
-      'src/components/AuthenticatorSettings/index.vue',
-      'src/components/DateRangePicker/index.vue',
-      'src/config/datetime.ts',
-      'src/types/timezone.ts'
-    ]) {
-      assert.equal(
-        await readFile(path.join(directory, file), 'utf8'),
-        await readFile(path.join(source, file), 'utf8')
-      );
-    }
-    if (preset === 'demo')
-      assert.equal(
-        await readFile(
-          path.join(
-            directory,
-            'examples/composables/usePaginatedTable.ts'
-          ),
-          'utf8'
-        ),
-        '// Example-only table query'
-      );
-    assert.match(result.stdout, /初始化完成/);
-    assert.match(result.stdout, /npm install/);
-    assert.match(
-      result.stdout,
-      preset === 'demo' ? /npm run dev:demo/ : /npm run dev/
-    );
-    assert.match(result.stdout, /pnpm.*Yarn/);
-    assert.match(result.stdout, /database\/mysql\/init\.sh/);
-    assert.match(result.stdout, /database\/mysql\/README\.md/);
-    if (preset === 'demo') assert.match(result.stdout, /演示账号/);
-    else assert.doesNotMatch(result.stdout, /演示账号/);
-
-    assert.doesNotMatch(result.stdout, /包管理器版本：|undefined/);
-    const pkg = JSON.parse(
-      await readFile(path.join(directory, 'package.json'), 'utf8')
-    );
-    assert.equal(pkg.packageManager, undefined);
-    const lock = JSON.parse(
-      await readFile(path.join(directory, 'package-lock.json'), 'utf8')
-    );
-    assert.equal(lock.name, pkg.name);
-    assert.equal(lock.packages[''].name, pkg.name);
-    assert.equal(
-      (await readdir(path.join(directory, 'scripts'))).includes('lib'),
-      preset === 'demo'
-    );
-  }
-});
-
-test('custom demo CLI uses its own backend and login instructions', async (t) => {
+test('custom API CLI uses its own backend and login instructions', async (t) => {
   const { cwd, source } = await fixture(t);
   const cli = fileURLToPath(new URL('../bin/index.js', import.meta.url));
   const result = spawnSync(
     process.execPath,
     [
       cli,
-      'custom-demo-cli',
+      'custom-api-cli',
       '--yes',
       '--preset',
-      'demo',
+      'starter',
       '--template-dir',
       source,
       '--api-url',
@@ -612,7 +426,7 @@ test('custom demo CLI uses its own backend and login instructions', async (t) =>
   assert.match(result.stdout, /npm run dev\n/);
   assert.doesNotMatch(result.stdout, /演示账号|npm run dev:demo/);
   const env = await readFile(
-    path.join(cwd, 'custom-demo-cli', '.env.development'),
+    path.join(cwd, 'custom-api-cli', '.env.development'),
     'utf8'
   );
   assert.ok(
@@ -632,7 +446,7 @@ test('changed source lock requires regeneration and never leaves a project', asy
   });
 });
 
-test('all presets ignore legacy package manager pins without changing the source template', async (t) => {
+test('starter ignores legacy package manager pins without changing the source template', async (t) => {
   const { cwd, source } = await fixture(t);
   for (const file of ['package.json', 'scaffold/core/package.json']) {
     const location = path.join(source, file);
@@ -640,21 +454,18 @@ test('all presets ignore legacy package manager pins without changing the source
     pkg.packageManager = 'pnpm@12.3.4';
     await writeFile(location, JSON.stringify(pkg));
   }
-  for (const preset of ['starter', 'worker', 'demo']) {
-    const result = await createProject({
-      projectName: `legacy-${preset}`,
-      cwd,
-      templateDir: source,
-      preset
-    });
-    const pkg = JSON.parse(
-      await readFile(path.join(result.directory, 'package.json'), 'utf8')
-    );
-    assert.equal(pkg.packageManager, undefined);
-    await assert.rejects(lstat(path.join(result.directory, 'AGENTS.md')), {
-      code: 'ENOENT'
-    });
-  }
+  const result = await createProject({
+    projectName: `legacy-starter`,
+    cwd,
+    templateDir: source
+  });
+  const pkg = JSON.parse(
+    await readFile(path.join(result.directory, 'package.json'), 'utf8')
+  );
+  assert.equal(pkg.packageManager, undefined);
+  await assert.rejects(lstat(path.join(result.directory, 'AGENTS.md')), {
+    code: 'ENOENT'
+  });
   const original = JSON.parse(
     await readFile(path.join(source, 'package.json'), 'utf8')
   );
@@ -767,4 +578,49 @@ process.exit(Number(process.env.TEST_INSTALL_EXIT || 0));`;
   await assert.rejects(lstat(path.join(cwd, 'invalid-install')), {
     code: 'ENOENT'
   });
+});
+
+
+test('pure Vue and React templates use their own repository with a shared starter contract', async (t) => {
+  const cwd = await mkdtemp(path.join(tmpdir(), 'nova-pure-'));
+  t.after(() => rm(cwd, { recursive: true, force: true }));
+  for (const [framework, entry, repository] of [
+    ['vue', 'main.ts', 'admin-template'],
+    ['react', 'main.tsx', 'admin-template-react']
+  ]) {
+    const result = await createProject({
+      projectName: `app-${framework}`,
+      cwd,
+      framework,
+      preset: 'starter',
+      apiURL: 'https://api.example.com',
+      ref: 'v2.0.0',
+      download: async (input, { dir }) => {
+        assert.equal(input, `github:npora/${repository}#v2.0.0`);
+        const files = {
+          [`src/${entry}`]: 'export {};',
+          'database/mysql/01-schema.sql': '-- schema',
+          'database/mysql/02-seed.sql': '-- seed',
+          'vite.config.ts': 'export default {};',
+          'package.json': '{"scripts":{"dev":"vite","build":"vite build"}}',
+          'package-lock.json': '{"lockfileVersion":3,"packages":{"":{}}}'
+        };
+        for (const [name, content] of Object.entries(files)) {
+          const file = path.join(dir, name);
+          await mkdir(path.dirname(file), { recursive: true });
+          await writeFile(file, content);
+        }
+      }
+    });
+    assert.equal(result.framework, framework);
+    assert.equal(result.startCommand, 'npm run dev');
+    assert.match(
+      await readFile(path.join(result.directory, '.env.development'), 'utf8'),
+      /^VITE_API_URL=https:\/\/api\.example\.com$/m
+    );
+    assert.equal(
+      JSON.parse(await readFile(path.join(result.directory, 'package-lock.json'), 'utf8')).packages[''].name,
+      `app-${framework}`
+    );
+  }
 });
