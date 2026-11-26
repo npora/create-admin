@@ -40,7 +40,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           repository: npora/admin-template-react
-          ref: main
+          ref: ${{ github.ref_name }}
           path: admin-template-react
           persist-credentials: false
       - uses: actions/setup-node@v6
