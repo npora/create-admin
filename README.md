@@ -10,7 +10,7 @@ Vue 与 React 在线演示均已开放。Vue 演示使用公开账号 `admin` �
 
 ## 快速开始
 
-建议使用 Node.js 24 LTS。生成器最低要求 Node.js 22.12，并支持 npm、pnpm 和 Yarn。
+建议使用 Node.js 24 LTS。生成器 CLI 最低要求 Node.js 22.12；生成的 Vue / React 项目需要 Node.js 22.18 或更新的 22.x，或 Node.js 24.11 及以上版本。生成器支持 npm、pnpm 和 Yarn。
 
 ```sh
 npx @npora/create-admin@latest my-admin --yes --framework vue --install npm
